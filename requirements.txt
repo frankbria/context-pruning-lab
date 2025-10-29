@@ -1,0 +1,12 @@
+# Minimal dependencies for context pruning lab
+
+# Core dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Optional: For visualizations in experiments
+matplotlib>=3.5.0
+pandas>=1.5.0
+
+# Optional: If testing with actual LLM
+anthropic>=0.18.0
