@@ -28,19 +28,27 @@ After each interaction:
 - ✅ Steady state (context stays 20-30% full indefinitely)
 - ✅ Smooth operation (no jarring resets)
 
+## Documentation
+
+📘 **[Technical Specification](TECHNICAL_SPECIFICATION.md)** - Comprehensive Phase I research specification
+📄 **[Specification Summary](SPEC_SUMMARY.md)** - Quick reference guide
+
 ## Project Structure
 
 ```
 context-pruning-lab/
 ├── README.md                           # This file
+├── TECHNICAL_SPECIFICATION.md          # Formal research specification
+├── SPEC_SUMMARY.md                     # Quick reference guide
 ├── requirements.txt                    # Minimal dependencies
 ├── pruner.py                          # Core algorithm
 ├── test_pruner.py                     # Unit tests
 ├── demo.py                            # Interactive demo
 └── experiments/
-    ├── experiment_1_linear_growth.py  # Prove no linear growth
-    ├── experiment_2_oscillation.py    # Measure steady state
-    └── experiment_3_degradation.py    # Compare vs batch compaction
+    ├── experiment_1_linear_growth.py  # Stability validation
+    ├── experiment_2_convergence.py    # Adaptive rate testing (to be implemented)
+    ├── experiment_3_preservation.py   # Information preservation (to be implemented)
+    └── experiment_4_code_quality.py   # Code generation benchmark (to be implemented)
 ```
 
 ## Quick Start
@@ -91,7 +99,7 @@ Each context item scored 0.0-1.0 based on:
 - **Item type** (30%): Some types more important (decisions > logs)
 - **Manual pins** (10%): User/agent marked as critical
 
-### Pruning Strategy
+### Adaptive Pruning Strategy
 
 ```python
 def prune_after_interaction(new_user_msg, new_agent_response):
@@ -102,38 +110,54 @@ def prune_after_interaction(new_user_msg, new_agent_response):
     for item in context:
         item.importance = calculate_importance(item)
 
-    # 3. Remove 110% of what was added (target: net reduction)
-    target_remove = tokens_added * 1.10
-    remove_lowest_scored(target_remove)
+    # 3. Calculate adaptive pruning rate (90-110% based on utilization)
+    pruning_rate = calculate_adaptive_rate(current_utilization, core_usage)
+    target_remove = tokens_added * pruning_rate
 
-    # Result: Context shrinks slightly each iteration
+    # 4. Remove lowest-scored items (excluding CORE tier)
+    remove_lowest_scored(target_remove, exclude_core=True)
+
+    # Result: Context self-regulates to steady state
 ```
+
+**Key Features**:
+- **Adaptive Rate**: Adjusts from 90-110% based on context utilization
+- **CORE Budget**: Protected tier never exceeds 25% of target capacity
+- **Multi-Factor Scoring**: Combines recency, access frequency, type, and manual pins
+
+## Research Approach
+
+**Phase I: Concept Validation** (Current)
+- Prove continuous pruning is functional and superior to discrete compaction
+- Run four validation experiments (see Technical Specification)
+- Benchmark against rule-based discrete compaction simulator
+
+**Phase II: Production Implementation** (Future)
+- MCP server integration with Claude Code
+- Full WARM/COLD tier implementation
+- LLM-based baseline comparison
+- Real-world user testing
 
 ## Experiments
 
-### Experiment 1: Linear Growth Prevention
+**See [TECHNICAL_SPECIFICATION.md](TECHNICAL_SPECIFICATION.md) for complete experimental design.**
 
-**Hypothesis**: Context will NOT grow linearly like traditional chat.
+### Experiment 1: Stability Validation
+**Status**: Implemented, needs adaptive rate updates
+**Goal**: Prove no linear growth, verify steady-state convergence
 
-**Test**: 1000 interactions, measure token count each iteration.
+### Experiment 2: Convergence Testing
+**Status**: To be implemented
+**Goal**: Validate adaptive pruning rate self-regulates from varied initial states
 
-**Expected**: Oscillation between 20-30K tokens, never exceeding 40K.
+### Experiment 3: Information Preservation
+**Status**: To be implemented
+**Goal**: Demonstrate >90% CORE decision recall vs. <70% for discrete baseline
 
-### Experiment 2: Steady State Oscillation
-
-**Hypothesis**: Context stabilizes in steady state after ~10 interactions.
-
-**Test**: Measure variance in token count over 100 interactions.
-
-**Expected**: Standard deviation < 3K tokens after stabilization.
-
-### Experiment 3: Degradation Test
-
-**Hypothesis**: Agent retains important information better than batch compaction.
-
-**Test**: After 100 interactions, query agent about early decisions.
-
-**Expected**: Continuous pruning recalls 90%+ of CORE decisions vs. 60% for batch.
+### Experiment 4: Code Quality Benchmark (PRIMARY)
+**Status**: To be implemented, **P0 critical**
+**Goal**: Equal or better code generation on SWE-bench-Lite Extended tasks
+**Benchmark**: 50 extended multi-turn coding tasks
 
 ## Integration with Claude Code
 
