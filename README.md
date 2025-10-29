@@ -32,6 +32,7 @@ After each interaction:
 
 📘 **[Technical Specification](TECHNICAL_SPECIFICATION.md)** - Comprehensive Phase I research specification
 📄 **[Specification Summary](SPEC_SUMMARY.md)** - Quick reference guide
+📋 **[Implementation Workflow](IMPLEMENTATION_WORKFLOW.md)** - Sprint-based project plan and execution guide
 
 ## Project Structure
 
@@ -40,6 +41,7 @@ context-pruning-lab/
 ├── README.md                           # This file
 ├── TECHNICAL_SPECIFICATION.md          # Formal research specification
 ├── SPEC_SUMMARY.md                     # Quick reference guide
+├── IMPLEMENTATION_WORKFLOW.md          # Sprint-based implementation plan
 ├── requirements.txt                    # Minimal dependencies
 ├── pruner.py                          # Core algorithm
 ├── test_pruner.py                     # Unit tests
