@@ -377,6 +377,10 @@ class TestIntegration:
         """Test that context doesn't grow linearly"""
         pruner = ContinuousPruner(target_size=5000)
 
+        # Add some initial CORE context to prevent cold-start issue
+        pruner.add_core_item("Project requirement", "requirement")
+        pruner.add_core_item("Architecture decision", "architecture")
+
         token_counts = []
         for i in range(50):
             pruner.add_interaction(
