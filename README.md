@@ -123,9 +123,14 @@ def prune_after_interaction(new_user_msg, new_agent_response):
 ```
 
 **Key Features**:
-- **Adaptive Rate**: Adjusts from 90-110% based on context utilization
+- **Adaptive Rate**: Self-regulating pruning rate (0.90-1.10) based on system state
+  - Low utilization (<20%): Rate 0.95 - allows context growth
+  - Target range (30-50%): Rate 1.10 - maintains steady state
+  - High utilization (>70%): Rate 1.10 - forces aggressive pruning
+  - CORE pressure (>25%): +0.05 adjustment to protect CORE budget
 - **CORE Budget**: Protected tier never exceeds 25% of target capacity
-- **Multi-Factor Scoring**: Combines recency, access frequency, type, and manual pins
+- **Multi-Factor Scoring**: Combines recency (40%), access frequency (20%), item type (30%), and manual pins (10%)
+- **Convergence**: Adaptive rate converges to steady state within 20 interactions
 
 ## Research Approach
 
@@ -144,20 +149,36 @@ def prune_after_interaction(new_user_msg, new_agent_response):
 
 **See [TECHNICAL_SPECIFICATION.md](TECHNICAL_SPECIFICATION.md) for complete experimental design.**
 
-### Experiment 1: Stability Validation
-**Status**: Implemented, needs adaptive rate updates
+### Experiment 1: Stability Validation ✅
+**Status**: **Complete** (Sprint 1)
 **Goal**: Prove no linear growth, verify steady-state convergence
+**Results**:
+- All 5 acceptance criteria PASS
+- Adaptive rate converges at t=20 interactions
+- Context maintains stability (no linear growth)
+- Rate stays within bounds [0.90, 1.10]
+- Comprehensive 4-panel visualization generated
 
-### Experiment 2: Convergence Testing
-**Status**: To be implemented
-**Goal**: Validate adaptive pruning rate self-regulates from varied initial states
+### Convergence Validation ✅
+**Status**: **Complete** (Sprint 1)
+**Goal**: Validate adaptive pruning rate across multiple scenarios
+**Results**:
+- 5/5 scenarios passed (100%)
+- Tested across different target sizes (5K, 20K, 40K)
+- Consistent behavior across random seeds
+- Average convergence time: 20 interactions
+- All rates within bounds [0.90, 1.10]
+
+### Experiment 2: CORE Budget Enforcement
+**Status**: **Next** (Sprint 2)
+**Goal**: Verify CORE tier never exceeds 25% budget, validate aggressive HOT pruning under pressure
 
 ### Experiment 3: Information Preservation
-**Status**: To be implemented
+**Status**: To be implemented (Sprint 3-4)
 **Goal**: Demonstrate >90% CORE decision recall vs. <70% for discrete baseline
 
 ### Experiment 4: Code Quality Benchmark (PRIMARY)
-**Status**: To be implemented, **P0 critical**
+**Status**: To be implemented (Sprint 5-6), **P0 critical**
 **Goal**: Equal or better code generation on SWE-bench-Lite Extended tasks
 **Benchmark**: 50 extended multi-turn coding tasks
 
@@ -192,5 +213,33 @@ MIT License - See LICENSE file
 
 ---
 
-**Status**: Experimental - Algorithm validation in progress
+## Sprint Progress
+
+### Sprint 1: Adaptive Pruning Rate ✅ **COMPLETE**
+**Duration**: Week 1-2
+**Status**: 100% complete (5/5 tasks)
+
+**Completed**:
+- ✅ T1.1: `calculate_adaptive_rate()` function implemented
+- ✅ T1.2: Adaptive rate integrated into pruner
+- ✅ T1.3: Comprehensive unit tests (9 tests, all passing)
+- ✅ T1.4: Experiment 1 updated with convergence tracking
+- ✅ T1.5: Multi-scenario validation (5/5 passing)
+
+**Key Achievements**:
+- Adaptive rate formula validated and working
+- Convergence behavior confirmed (<20 interactions)
+- Cold-start limitation documented
+- Test coverage: 23/23 passing (100%)
+- Ready for Sprint 2
+
+### Sprint 2: CORE Budget Enforcement (Next)
+**Duration**: Week 3-4
+**Focus**: Implement and validate CORE budget management
+
+**See [SPRINT_1_SUMMARY.md](SPRINT_1_SUMMARY.md) for detailed Sprint 1 report.**
+
+---
+
+**Status**: Phase I - Sprint 1 Complete ✅
 **Last Updated**: 2025-10-29
