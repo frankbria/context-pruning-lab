@@ -348,6 +348,246 @@ class TestAdaptiveRate:
         assert 0.90 <= used_rate <= 1.10
 
 
+class TestCoreBudgetEnforcer:
+    """Tests for CORE budget enforcement"""
+
+    def test_initialization(self):
+        """Test CoreBudgetEnforcer initializes correctly"""
+        from pruner import CoreBudgetEnforcer
+
+        enforcer = CoreBudgetEnforcer(target_size=10000, core_budget_ratio=0.25)
+
+        assert enforcer.target_size == 10000
+        assert enforcer.core_budget_ratio == 0.25
+        assert enforcer.core_budget == 2500  # 25% of 10000
+        assert len(enforcer.core_items) == 0
+        assert enforcer.overflow_count == 0
+
+    def test_can_add_to_core_with_budget(self):
+        """Test can add items when budget allows"""
+        from pruner import CoreBudgetEnforcer, ContextItem
+
+        enforcer = CoreBudgetEnforcer(target_size=10000)  # Budget = 2500
+
+        # Small item should fit
+        item = ContextItem("x" * 400, "requirement")  # 100 tokens
+        assert enforcer.can_add_to_core(item) is True
+
+    def test_can_add_to_core_exceeds_budget(self):
+        """Test cannot add when budget would be exceeded"""
+        from pruner import CoreBudgetEnforcer, ContextItem
+
+        enforcer = CoreBudgetEnforcer(target_size=10000)  # Budget = 2500
+
+        # Fill budget almost completely
+        for i in range(24):
+            item = ContextItem("x" * 400, "requirement")  # 100 tokens each
+            enforcer.add_to_core(item)
+
+        # Budget now at 2400/2500 tokens
+        # Try to add item that would exceed
+        large_item = ContextItem("x" * 500, "requirement")  # 125 tokens
+        assert enforcer.can_add_to_core(large_item) is False
+
+    def test_add_to_core_success(self):
+        """Test successfully adding item to CORE"""
+        from pruner import CoreBudgetEnforcer, ContextItem
+
+        enforcer = CoreBudgetEnforcer(target_size=10000)
+
+        item = ContextItem("Important decision", "core_decision")
+        success, reason = enforcer.add_to_core(item)
+
+        assert success is True
+        assert reason is None
+        assert item.tier == "CORE"
+        assert item.importance == 1.0
+        assert item.pinned is True
+        assert len(enforcer.core_items) == 1
+
+    def test_add_to_core_overflow(self):
+        """Test overflow when budget exceeded"""
+        from pruner import CoreBudgetEnforcer, ContextItem
+
+        enforcer = CoreBudgetEnforcer(target_size=10000)  # Budget = 2500
+
+        # Fill budget completely
+        for i in range(25):
+            item = ContextItem("x" * 400, "requirement")  # 100 tokens each
+            enforcer.add_to_core(item)
+
+        # Try to add one more - should overflow
+        overflow_item = ContextItem("Overflow item", "requirement")
+        success, reason = enforcer.add_to_core(overflow_item)
+
+        assert success is False
+        assert reason is not None
+        assert "CORE budget exceeded" in reason
+        assert enforcer.overflow_count == 1
+
+    def test_remove_from_core(self):
+        """Test removing item from CORE"""
+        from pruner import CoreBudgetEnforcer, ContextItem
+
+        enforcer = CoreBudgetEnforcer(target_size=10000)
+
+        item = ContextItem("Decision", "core_decision")
+        enforcer.add_to_core(item)
+
+        # Remove it
+        removed = enforcer.remove_from_core(item)
+
+        assert removed is True
+        assert len(enforcer.core_items) == 0
+
+    def test_remove_nonexistent_item(self):
+        """Test removing item not in CORE"""
+        from pruner import CoreBudgetEnforcer, ContextItem
+
+        enforcer = CoreBudgetEnforcer(target_size=10000)
+
+        item = ContextItem("Not in CORE", "requirement")
+        removed = enforcer.remove_from_core(item)
+
+        assert removed is False
+
+    def test_get_core_utilization(self):
+        """Test CORE utilization calculation"""
+        from pruner import CoreBudgetEnforcer, ContextItem
+
+        enforcer = CoreBudgetEnforcer(target_size=10000)  # Budget = 2500
+
+        # Add items totaling 1000 tokens (40% of budget)
+        for i in range(10):
+            item = ContextItem("x" * 400, "requirement")  # 100 tokens each
+            enforcer.add_to_core(item)
+
+        utilization = enforcer.get_core_utilization()
+        assert abs(utilization - 0.40) < 0.01  # 1000/2500 = 0.40
+
+    def test_get_core_tokens(self):
+        """Test token counting"""
+        from pruner import CoreBudgetEnforcer, ContextItem
+
+        enforcer = CoreBudgetEnforcer(target_size=10000)
+
+        # Add 5 items of 100 tokens each
+        for i in range(5):
+            item = ContextItem("x" * 400, "requirement")
+            enforcer.add_to_core(item)
+
+        assert enforcer.get_core_tokens() == 500
+
+    def test_get_available_budget(self):
+        """Test remaining budget calculation"""
+        from pruner import CoreBudgetEnforcer, ContextItem
+
+        enforcer = CoreBudgetEnforcer(target_size=10000)  # Budget = 2500
+
+        # Add 1000 tokens
+        for i in range(10):
+            item = ContextItem("x" * 400, "requirement")
+            enforcer.add_to_core(item)
+
+        available = enforcer.get_available_budget()
+        assert available == 1500  # 2500 - 1000
+
+    def test_get_stats(self):
+        """Test statistics reporting"""
+        from pruner import CoreBudgetEnforcer, ContextItem
+
+        enforcer = CoreBudgetEnforcer(target_size=10000)
+
+        # Add some items
+        for i in range(5):
+            item = ContextItem("x" * 400, "requirement")
+            enforcer.add_to_core(item)
+
+        stats = enforcer.get_stats()
+
+        assert 'core_budget' in stats
+        assert 'core_tokens' in stats
+        assert 'core_utilization' in stats
+        assert 'core_items_count' in stats
+        assert 'available_budget' in stats
+        assert 'overflow_count' in stats
+
+        assert stats['core_budget'] == 2500
+        assert stats['core_tokens'] == 500
+        assert stats['core_items_count'] == 5
+        assert stats['overflow_count'] == 0
+
+
+class TestCoreBudgetIntegration:
+    """Integration tests for CORE budget with pruner"""
+
+    def test_pruner_initializes_enforcer(self):
+        """Test pruner creates CoreBudgetEnforcer"""
+        pruner = ContinuousPruner(target_size=10000)
+
+        assert hasattr(pruner, 'core_enforcer')
+        assert pruner.core_enforcer.target_size == 10000
+        assert pruner.core_enforcer.core_budget == 2500
+
+    def test_add_core_item_within_budget(self):
+        """Test adding CORE item when budget allows"""
+        pruner = ContinuousPruner(target_size=10000)
+
+        success = pruner.add_core_item("Important decision", "core_decision")
+
+        assert success is True
+        core_items = [i for i in pruner.context if i.tier == "CORE"]
+        assert len(core_items) == 1
+
+    def test_add_core_item_overflow_to_hot(self):
+        """Test CORE overflow redirects to HOT tier"""
+        pruner = ContinuousPruner(target_size=10000)  # Budget = 2500
+
+        # Fill CORE budget
+        for i in range(25):
+            pruner.add_core_item("x" * 400, "requirement")  # 100 tokens each
+
+        # Add one more - should overflow to HOT
+        success = pruner.add_core_item("Overflow item", "requirement")
+
+        assert success is False
+        hot_items = [i for i in pruner.context if i.tier == "HOT"]
+        assert len(hot_items) == 1
+        assert hot_items[0].importance == 0.95  # High importance
+
+    def test_core_budget_stats_in_metrics(self):
+        """Test CORE budget stats appear in metrics summary"""
+        pruner = ContinuousPruner(target_size=10000)
+
+        pruner.add_core_item("Decision 1", "core_decision")
+        pruner.add_core_item("Decision 2", "requirement")
+
+        metrics = pruner.get_metrics_summary()
+
+        assert 'core_budget' in metrics
+        assert 'core_budget' in metrics['core_budget']
+        assert 'core_tokens' in metrics['core_budget']
+        assert 'core_utilization' in metrics['core_budget']
+
+    def test_core_utilization_affects_adaptive_rate(self):
+        """Test CORE pressure increases adaptive rate"""
+        pruner = ContinuousPruner(target_size=10000)
+
+        # Get rate with low CORE usage
+        rate_low = pruner.calculate_adaptive_rate()
+
+        # Fill CORE to 30% of budget (exceeds 25% threshold)
+        for i in range(8):
+            pruner.add_core_item("x" * 400, "requirement")  # 800 tokens = 32% of 2500
+
+        # Get rate with high CORE usage
+        rate_high = pruner.calculate_adaptive_rate()
+
+        # High CORE usage should increase rate by 0.05
+        # (Note: actual difference depends on overall utilization too)
+        assert rate_high >= rate_low
+
+
 class TestIntegration:
     """Integration tests for full workflows"""
 

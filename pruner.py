@@ -7,8 +7,13 @@ continuous importance-based pruning after every interaction.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import math
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -63,6 +68,128 @@ class PruningMetrics:
         }
 
 
+class CoreBudgetEnforcer:
+    """
+    Enforces CORE tier budget constraint (≤25% of target capacity).
+
+    The CORE tier contains critical information that should never be pruned
+    (decisions, requirements, architecture). However, it must not exceed
+    25% of the total target capacity to leave room for HOT tier operations.
+
+    When budget is exceeded:
+    - New CORE items are redirected to HOT tier with high importance (0.95)
+    - Warning is logged for visibility
+    - System continues operating (soft constraint)
+    """
+
+    def __init__(self, target_size: int, core_budget_ratio: float = 0.25):
+        """
+        Initialize CORE budget enforcer.
+
+        Args:
+            target_size: Total target context size in tokens
+            core_budget_ratio: Maximum fraction of target for CORE tier (default: 0.25)
+        """
+        self.target_size = target_size
+        self.core_budget_ratio = core_budget_ratio
+        self.core_budget = int(target_size * core_budget_ratio)
+        self.core_items: List[ContextItem] = []
+        self.overflow_count = 0  # Track how many items overflowed
+
+    def can_add_to_core(self, item: ContextItem) -> bool:
+        """
+        Check if item can be added to CORE without exceeding budget.
+
+        Args:
+            item: Context item to check
+
+        Returns:
+            bool: True if adding item would stay within budget
+        """
+        current_tokens = sum(i.token_count for i in self.core_items)
+        return (current_tokens + item.token_count) <= self.core_budget
+
+    def add_to_core(self, item: ContextItem) -> Tuple[bool, Optional[str]]:
+        """
+        Add item to CORE tier if budget allows, otherwise return overflow info.
+
+        Args:
+            item: Context item to add to CORE
+
+        Returns:
+            Tuple of (success: bool, reason: Optional[str])
+            - (True, None) if item added to CORE
+            - (False, reason) if item overflowed with explanation
+        """
+        if self.can_add_to_core(item):
+            # Budget allows, add to CORE
+            item.tier = "CORE"
+            item.importance = 1.0
+            item.pinned = True
+            self.core_items.append(item)
+            return (True, None)
+        else:
+            # Budget exceeded, item overflows to HOT
+            self.overflow_count += 1
+            current_tokens = sum(i.token_count for i in self.core_items)
+            utilization = current_tokens / self.core_budget if self.core_budget > 0 else 0
+
+            reason = (
+                f"CORE budget exceeded: {current_tokens}/{self.core_budget} tokens "
+                f"({utilization:.1%}). Item redirected to HOT tier with importance=0.95"
+            )
+
+            logger.warning(reason)
+
+            # Item will be added to HOT tier by caller with high importance
+            return (False, reason)
+
+    def remove_from_core(self, item: ContextItem) -> bool:
+        """
+        Remove item from CORE tier.
+
+        Args:
+            item: Context item to remove
+
+        Returns:
+            bool: True if item was in CORE and removed, False otherwise
+        """
+        if item in self.core_items:
+            self.core_items.remove(item)
+            return True
+        return False
+
+    def get_core_utilization(self) -> float:
+        """
+        Calculate current CORE tier utilization as fraction of budget.
+
+        Returns:
+            float: Utilization ratio (0.0-1.0+, can exceed 1.0 if over budget)
+        """
+        current_tokens = sum(i.token_count for i in self.core_items)
+        return current_tokens / self.core_budget if self.core_budget > 0 else 0.0
+
+    def get_core_tokens(self) -> int:
+        """Get current token count in CORE tier"""
+        return sum(i.token_count for i in self.core_items)
+
+    def get_available_budget(self) -> int:
+        """Get remaining CORE budget in tokens"""
+        current = self.get_core_tokens()
+        return max(0, self.core_budget - current)
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get CORE budget statistics for reporting"""
+        return {
+            'core_budget': self.core_budget,
+            'core_tokens': self.get_core_tokens(),
+            'core_utilization': self.get_core_utilization(),
+            'core_items_count': len(self.core_items),
+            'available_budget': self.get_available_budget(),
+            'overflow_count': self.overflow_count
+        }
+
+
 class ContinuousPruner:
     """
     Continuous context pruning implementation.
@@ -84,6 +211,12 @@ class ContinuousPruner:
         self.context: List[ContextItem] = []
         self.interaction_count = 0
         self.metrics = PruningMetrics(target_token_count=target_size)
+
+        # Initialize CORE budget enforcer
+        self.core_enforcer = CoreBudgetEnforcer(
+            target_size=target_size,
+            core_budget_ratio=0.25
+        )
 
         # Track pruning rate history for analysis
         self.pruning_rate_history: List[float] = []
@@ -130,9 +263,8 @@ class ContinuousPruner:
         current_tokens = self.get_total_tokens()
         current_utilization = current_tokens / self.target_size if self.target_size > 0 else 0.0
 
-        # Calculate CORE tier utilization
-        core_tokens = sum(item.token_count for item in self.context if item.tier == "CORE")
-        core_utilization = core_tokens / self.core_budget if self.core_budget > 0 else 0.0
+        # Calculate CORE tier utilization using budget enforcer
+        core_utilization = self.core_enforcer.get_core_utilization()
 
         # Base pruning rate (default: slight shrinkage)
         base_rate = 1.10
@@ -336,19 +468,41 @@ class ContinuousPruner:
 
     def add_core_item(self, content: str, item_type: str = 'core_decision'):
         """
-        Add item to CORE tier (never pruned).
+        Add item to CORE tier (never pruned) if budget allows.
 
         Used for critical decisions, architecture, requirements, etc.
+
+        If CORE budget is exceeded, item is added to HOT tier with
+        high importance (0.95) instead.
+
+        Args:
+            content: Content of the item
+            item_type: Type of item (default: 'core_decision')
+
+        Returns:
+            bool: True if added to CORE, False if overflowed to HOT
         """
         item = ContextItem(
             content=content,
             item_type=item_type,
-            interaction_number=self.interaction_count,
-            importance=1.0,
-            tier="CORE",
-            pinned=True
+            interaction_number=self.interaction_count
         )
-        self.context.append(item)
+
+        # Try to add to CORE tier via budget enforcer
+        success, reason = self.core_enforcer.add_to_core(item)
+
+        if success:
+            # Added to CORE tier
+            self.context.append(item)
+            return True
+        else:
+            # Budget exceeded, add to HOT tier with high importance
+            item.tier = "HOT"
+            item.importance = 0.95  # Very high, but not CORE-level
+            item.pinned = False  # Can be pruned if necessary
+            self.context.append(item)
+            logger.info(f"CORE budget overflow: Item added to HOT tier (reason: {reason})")
+            return False
 
     def pin_item(self, item: ContextItem):
         """Manually mark item as important (prevents pruning)"""
@@ -383,6 +537,7 @@ class ContinuousPruner:
                 for tier, items in tiers.items()
             },
             'adaptive_rate': adaptive_rate_stats,
+            'core_budget': self.core_enforcer.get_stats(),
             'last_prune': self.metrics.to_dict()
         }
 
