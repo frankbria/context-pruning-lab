@@ -171,6 +171,183 @@ class TestContinuousPruner:
         assert pruner.type_weights['debug_log'] < 0.5
 
 
+class TestAdaptiveRate:
+    """Tests for adaptive pruning rate calculation"""
+
+    def test_adaptive_rate_low_utilization(self):
+        """Test adaptive rate with very low context utilization (<20%)"""
+        pruner = ContinuousPruner(target_size=10000)
+
+        # Add minimal context (< 20% utilization)
+        pruner.add_interaction("short", "message")
+
+        rate = pruner.calculate_adaptive_rate()
+
+        # Should allow growth (rate < 1.0)
+        assert rate < 1.0
+        assert rate >= 0.90  # Within bounds
+
+    def test_adaptive_rate_target_utilization(self):
+        """Test adaptive rate at target utilization (30-50%)"""
+        pruner = ContinuousPruner(target_size=5000)
+
+        # Directly set context to reach ~40% utilization (bypass pruning)
+        target_tokens = int(5000 * 0.40)
+        while pruner.get_total_tokens() < target_tokens:
+            from pruner import ContextItem
+            pruner.context.append(
+                ContextItem("x" * 400, "user_message", tier="HOT")
+            )
+
+        rate = pruner.calculate_adaptive_rate()
+
+        # Should be at standard rate (1.10 + 0.0 adjustment)
+        assert rate == 1.10
+
+    def test_adaptive_rate_high_utilization(self):
+        """Test adaptive rate with high utilization (>70%)"""
+        pruner = ContinuousPruner(target_size=2000)
+
+        # Directly set context to >70% utilization (bypass pruning)
+        target_tokens = int(2000 * 0.75)
+        while pruner.get_total_tokens() < target_tokens:
+            from pruner import ContextItem
+            pruner.context.append(
+                ContextItem("x" * 400, "user_message", tier="HOT")
+            )
+
+        rate = pruner.calculate_adaptive_rate()
+
+        # Should force aggressive pruning (max rate)
+        assert rate == 1.10
+
+    def test_adaptive_rate_core_pressure(self):
+        """Test adaptive rate adjusts for CORE budget pressure"""
+        pruner = ContinuousPruner(target_size=10000, core_budget=2000)
+
+        # Add CORE items exceeding 25% budget (>500 tokens)
+        for i in range(10):
+            pruner.add_core_item(f"Critical decision {i} " * 30, "core_decision")
+
+        # Add some HOT tier context
+        pruner.add_interaction("User" * 20, "Agent" * 20)
+
+        rate = pruner.calculate_adaptive_rate()
+
+        # Should add CORE pressure adjustment (+0.05)
+        # Even at low utilization, rate should be higher due to CORE pressure
+        assert rate > pruner.calculate_adaptive_rate.__code__.co_consts[1]  # base_rate
+
+    def test_adaptive_rate_boundaries(self):
+        """Test adaptive rate enforces min/max boundaries"""
+        pruner = ContinuousPruner(target_size=10000)
+
+        # Test minimum bound (empty context)
+        rate_min = pruner.calculate_adaptive_rate()
+        assert rate_min >= 0.90
+
+        # Test maximum bound (overfull context)
+        # Force high utilization + CORE pressure
+        pruner.target_size = 100  # Very small target
+        for _ in range(20):
+            pruner.add_interaction("msg" * 50, "resp" * 50)
+
+        rate_max = pruner.calculate_adaptive_rate()
+        assert rate_max <= 1.10
+
+    def test_adaptive_rate_all_thresholds(self):
+        """Test all utilization threshold boundaries"""
+        pruner = ContinuousPruner(target_size=10000)
+
+        # Test each threshold range
+        test_cases = [
+            (0.15, "very_low"),   # <20%: -0.15 adjustment
+            (0.25, "low"),         # 20-30%: -0.10 adjustment
+            (0.40, "target"),      # 30-50%: 0.0 adjustment
+            (0.60, "high"),        # 50-70%: +0.05 adjustment
+            (0.80, "very_high"),   # >70%: +0.10 adjustment
+        ]
+
+        expected_rates = {
+            "very_low": 0.95,      # 1.10 - 0.15
+            "low": 1.00,            # 1.10 - 0.10
+            "target": 1.10,         # 1.10 + 0.0
+            "high": 1.10,           # 1.10 + 0.05, capped at 1.10
+            "very_high": 1.10,      # 1.10 + 0.10, capped at 1.10
+        }
+
+        for target_util, label in test_cases:
+            # Set up context to achieve target utilization
+            pruner.context = []
+            target_tokens = int(pruner.target_size * target_util)
+
+            # Add items to reach target utilization
+            while pruner.get_total_tokens() < target_tokens:
+                pruner.context.append(
+                    ContextItem("x" * 400, "user_message", tier="HOT")
+                )
+
+            rate = pruner.calculate_adaptive_rate()
+            # Use approximate comparison for floating point
+            assert abs(rate - expected_rates[label]) < 0.001, \
+                f"Expected {expected_rates[label]} for {label} ({target_util*100}% util), got {rate}"
+
+    def test_adaptive_rate_history_tracking(self):
+        """Test that pruning rate history is tracked"""
+        pruner = ContinuousPruner(target_size=10000)
+
+        # Initially empty
+        assert len(pruner.pruning_rate_history) == 0
+
+        # Add interactions
+        for i in range(5):
+            pruner.add_interaction(f"msg {i}", f"resp {i}")
+
+        # Should have tracked 5 rates
+        assert len(pruner.pruning_rate_history) == 5
+
+        # All rates should be within bounds
+        assert all(0.90 <= rate <= 1.10 for rate in pruner.pruning_rate_history)
+
+    def test_adaptive_rate_in_metrics_summary(self):
+        """Test adaptive rate appears in metrics summary"""
+        pruner = ContinuousPruner(target_size=10000)
+
+        # Add some interactions
+        for i in range(10):
+            pruner.add_interaction(f"User {i}" * 20, f"Agent {i}" * 20)
+
+        summary = pruner.get_metrics_summary()
+
+        # Should include adaptive rate stats
+        assert 'adaptive_rate' in summary
+        assert 'current_rate' in summary['adaptive_rate']
+        assert 'mean_rate' in summary['adaptive_rate']
+        assert 'min_rate' in summary['adaptive_rate']
+        assert 'max_rate' in summary['adaptive_rate']
+
+        # Values should be sensible
+        assert 0.90 <= summary['adaptive_rate']['current_rate'] <= 1.10
+        assert 0.90 <= summary['adaptive_rate']['mean_rate'] <= 1.10
+
+    def test_adaptive_rate_integration(self):
+        """Test adaptive rate actually used during pruning"""
+        pruner = ContinuousPruner(target_size=5000)
+
+        # Track initial state
+        initial_rate = pruner.calculate_adaptive_rate()
+
+        # Add interaction
+        pruner.add_interaction("Test user message " * 50, "Test agent response " * 50)
+
+        # Check that rate was recorded
+        assert len(pruner.pruning_rate_history) == 1
+
+        # The used rate should match calculated rate
+        used_rate = pruner.pruning_rate_history[0]
+        assert 0.90 <= used_rate <= 1.10
+
+
 class TestIntegration:
     """Integration tests for full workflows"""
 

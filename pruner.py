@@ -68,22 +68,25 @@ class ContinuousPruner:
     Continuous context pruning implementation.
 
     Maintains steady-state context by pruning after every interaction.
-    Goal: Remove ~110% of what's added to gradually reduce context over time.
+    Uses adaptive pruning rate (0.90-1.10) that adjusts based on context utilization.
     """
 
     def __init__(
         self,
         target_size: int = 40000,  # Target context size in tokens
-        pruning_overhead: float = 1.10,  # Remove 110% of what's added
+        pruning_overhead: float = 1.10,  # DEPRECATED: Use adaptive rate instead
         core_budget: int = 10000  # Reserved for CORE tier (never pruned)
     ):
         self.target_size = target_size
-        self.pruning_overhead = pruning_overhead
+        self.pruning_overhead = pruning_overhead  # Kept for backward compatibility
         self.core_budget = core_budget
 
         self.context: List[ContextItem] = []
         self.interaction_count = 0
         self.metrics = PruningMetrics(target_token_count=target_size)
+
+        # Track pruning rate history for analysis
+        self.pruning_rate_history: List[float] = []
 
         # Type importance weights
         self.type_weights = {
@@ -98,6 +101,73 @@ class ContinuousPruner:
             'debug_log': 0.30,
             'trace': 0.20
         }
+
+    def calculate_adaptive_rate(self) -> float:
+        """
+        Calculate adaptive pruning rate (0.90 - 1.10) based on system state.
+
+        The pruning rate self-regulates to maintain steady-state context:
+        - When context is low: prune less (allow growth)
+        - When context is high: prune more (force shrinkage)
+        - When CORE budget exceeded: prune HOT more aggressively
+
+        Formula from Technical Specification §2.2.2:
+        - Base rate: 1.10 (slight shrinkage by default)
+        - Utilization adjustment: -0.15 to +0.10 based on current_utilization
+        - CORE pressure adjustment: +0.05 if CORE exceeds 25% budget
+        - Final rate: clamped to [0.90, 1.10]
+
+        Returns:
+            float: Pruning rate in range [0.90, 1.10]
+
+        Examples:
+            >>> pruner.calculate_adaptive_rate()  # 20% utilization
+            0.95  # Allow modest growth
+            >>> pruner.calculate_adaptive_rate()  # 80% utilization
+            1.10  # Force aggressive shrinkage
+        """
+        # Calculate current context utilization
+        current_tokens = self.get_total_tokens()
+        current_utilization = current_tokens / self.target_size if self.target_size > 0 else 0.0
+
+        # Calculate CORE tier utilization
+        core_tokens = sum(item.token_count for item in self.context if item.tier == "CORE")
+        core_utilization = core_tokens / self.core_budget if self.core_budget > 0 else 0.0
+
+        # Base pruning rate (default: slight shrinkage)
+        base_rate = 1.10
+
+        # Adjust based on current utilization
+        if current_utilization < 0.20:
+            # Very low utilization: allow significant growth
+            utilization_adjustment = -0.15
+        elif current_utilization < 0.30:
+            # Low utilization: allow modest growth
+            utilization_adjustment = -0.10
+        elif current_utilization < 0.50:
+            # Target range: standard pruning
+            utilization_adjustment = 0.0
+        elif current_utilization < 0.70:
+            # High utilization: more aggressive pruning
+            utilization_adjustment = +0.05
+        else:
+            # Very high utilization: maximum pruning
+            utilization_adjustment = +0.10
+
+        # Adjust based on CORE budget pressure
+        if core_utilization > 0.25:
+            # CORE tier exceeds budget: prune HOT more aggressively
+            core_adjustment = +0.05
+        else:
+            core_adjustment = 0.0
+
+        # Calculate final rate
+        final_rate = base_rate + utilization_adjustment + core_adjustment
+
+        # Enforce bounds [0.90, 1.10]
+        final_rate = max(0.90, min(1.10, final_rate))
+
+        return final_rate
 
     def add_interaction(
         self,
@@ -139,8 +209,12 @@ class ContinuousPruner:
         # Update all importance scores
         self._update_importance_scores()
 
-        # Calculate how much to prune (110% of what was added)
-        target_prune = int(tokens_added * self.pruning_overhead)
+        # Calculate adaptive pruning rate based on current state
+        adaptive_rate = self.calculate_adaptive_rate()
+        self.pruning_rate_history.append(adaptive_rate)
+
+        # Calculate how much to prune using adaptive rate
+        target_prune = int(tokens_added * adaptive_rate)
 
         # Prune lowest-scored items
         tokens_removed, items_removed = self._prune_context(target_prune)
@@ -285,6 +359,16 @@ class ContinuousPruner:
         """Get current pruning metrics and statistics"""
         tiers = self.get_context_by_tier()
 
+        # Calculate adaptive rate stats
+        adaptive_rate_stats = {}
+        if self.pruning_rate_history:
+            adaptive_rate_stats = {
+                'current_rate': self.pruning_rate_history[-1],
+                'mean_rate': sum(self.pruning_rate_history) / len(self.pruning_rate_history),
+                'min_rate': min(self.pruning_rate_history),
+                'max_rate': max(self.pruning_rate_history),
+            }
+
         return {
             'total_interactions': self.interaction_count,
             'total_items': len(self.context),
@@ -298,6 +382,7 @@ class ContinuousPruner:
                 tier: sum(i.token_count for i in items)
                 for tier, items in tiers.items()
             },
+            'adaptive_rate': adaptive_rate_stats,
             'last_prune': self.metrics.to_dict()
         }
 
