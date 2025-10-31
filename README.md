@@ -42,14 +42,20 @@ context-pruning-lab/
 ├── TECHNICAL_SPECIFICATION.md          # Formal research specification
 ├── SPEC_SUMMARY.md                     # Quick reference guide
 ├── IMPLEMENTATION_WORKFLOW.md          # Sprint-based implementation plan
+├── SPRINT_1_SUMMARY.md                 # Sprint 1 completion report
+├── SPRINT_2_PROGRESS.md                # Sprint 2 progress tracking
+├── FUTURE_RESEARCH.md                  # Phase II research directions
 ├── requirements.txt                    # Minimal dependencies
-├── pruner.py                          # Core algorithm
-├── test_pruner.py                     # Unit tests
+├── pruner.py                          # Core algorithm with CORE budget enforcement
+├── test_pruner.py                     # Comprehensive unit tests (39 tests)
 ├── demo.py                            # Interactive demo
+├── docs/
+│   └── QUICK_START_GUIDE.md           # Quick start implementation guide
 └── experiments/
-    ├── experiment_1_linear_growth.py  # Stability validation
-    ├── experiment_2_convergence.py    # Adaptive rate testing (to be implemented)
-    ├── experiment_3_preservation.py   # Information preservation (to be implemented)
+    ├── experiment_1_linear_growth.py  # Stability validation ✅
+    ├── convergence_validation.py      # Multi-scenario adaptive rate tests ✅
+    ├── experiment_1_debug.py          # Debugging utilities
+    ├── experiment_2_preservation.py   # Information preservation (to be implemented)
     └── experiment_4_code_quality.py   # Code generation benchmark (to be implemented)
 ```
 
@@ -59,14 +65,15 @@ context-pruning-lab/
 # Install dependencies
 pip install -r requirements.txt
 
-# Run tests
+# Run all tests (39 tests, all passing)
 pytest test_pruner.py -v
 
 # Run interactive demo
 python demo.py
 
 # Run experiments
-python experiments/experiment_1_linear_growth.py
+python experiments/experiment_1_linear_growth.py      # Stability validation ✅
+python experiments/convergence_validation.py          # Multi-scenario validation ✅
 ```
 
 ## Algorithm Overview
@@ -128,7 +135,11 @@ def prune_after_interaction(new_user_msg, new_agent_response):
   - Target range (30-50%): Rate 1.10 - maintains steady state
   - High utilization (>70%): Rate 1.10 - forces aggressive pruning
   - CORE pressure (>25%): +0.05 adjustment to protect CORE budget
-- **CORE Budget**: Protected tier never exceeds 25% of target capacity
+- **CORE Budget Enforcement** (✅ Sprint 2): Protected tier never exceeds 25% of target capacity
+  - Hard constraint: CORE tier capped at 25% of target size
+  - Overflow handling: Excess items redirect to HOT tier with importance=0.95
+  - Budget tracking: Real-time utilization monitoring and warnings
+  - Graceful degradation: System continues operating under budget pressure
 - **Multi-Factor Scoring**: Combines recency (40%), access frequency (20%), item type (30%), and manual pins (10%)
 - **Convergence**: Adaptive rate converges to steady state within 20 interactions
 
@@ -233,13 +244,41 @@ MIT License - See LICENSE file
 - Test coverage: 23/23 passing (100%)
 - Ready for Sprint 2
 
-### Sprint 2: CORE Budget Enforcement (Next)
+### Sprint 2: CORE Budget Enforcement ✅ **PARTIAL COMPLETE**
 **Duration**: Week 3-4
-**Focus**: Implement and validate CORE budget management
+**Status**: 40% complete (2/5 tasks complete)
+
+**Completed**:
+- ✅ T2.1: `CoreBudgetEnforcer` class implemented
+- ✅ T2.2: Budget enforcer integrated into pruner
+- 16 new unit tests added (all passing)
+- CORE tier budget never exceeds 25% of target
+- Overflow items gracefully redirected to HOT tier
+
+**In Progress**:
+- ⏳ T2.4: Discrete compaction baseline implementation (P0 - Critical)
+- ⏳ T2.5: Baseline validation tests (P0)
+- ⏳ T2.7: Integration testing & documentation (P0)
+
+**Key Features Added**:
+- Hard constraint: CORE tier ≤ 25% of target capacity
+- Overflow handling: Excess items redirect to HOT with importance=0.95
+- Budget tracking: Real-time utilization monitoring
+- Adaptive rate integration: CORE pressure adjusts pruning behavior
+
+**Test Results**:
+- Total tests: 39/39 passing (23 original + 16 new)
+- Code coverage: >95% for CORE budget logic
+- Zero regressions in existing functionality
+
+### Sprint 3: Information Preservation (Next)
+**Duration**: Week 5-6
+**Focus**: Demonstrate >90% CORE decision recall vs. discrete baseline
 
 **See [SPRINT_1_SUMMARY.md](SPRINT_1_SUMMARY.md) for detailed Sprint 1 report.**
+**See [SPRINT_2_PROGRESS.md](SPRINT_2_PROGRESS.md) for Sprint 2 progress details.**
 
 ---
 
-**Status**: Phase I - Sprint 1 Complete ✅
-**Last Updated**: 2025-10-29
+**Status**: Phase I - Sprint 2 Partial (40% complete) ⏳
+**Last Updated**: 2025-10-31
