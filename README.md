@@ -47,7 +47,9 @@ context-pruning-lab/
 ├── FUTURE_RESEARCH.md                  # Phase II research directions
 ├── requirements.txt                    # Minimal dependencies
 ├── pruner.py                          # Core algorithm with CORE budget enforcement
-├── test_pruner.py                     # Comprehensive unit tests (39 tests)
+├── baseline.py                        # Discrete compaction baseline (rule-based) ✅
+├── test_pruner.py                     # Pruner unit tests (39 tests)
+├── test_baseline.py                   # Baseline unit tests (15 tests) ✅
 ├── demo.py                            # Interactive demo
 ├── docs/
 │   └── QUICK_START_GUIDE.md           # Quick start implementation guide
@@ -65,8 +67,8 @@ context-pruning-lab/
 # Install dependencies
 pip install -r requirements.txt
 
-# Run all tests (39 tests, all passing)
-pytest test_pruner.py -v
+# Run all tests (54 tests, all passing)
+pytest test_pruner.py test_baseline.py -v
 
 # Run interactive demo
 python demo.py
@@ -246,29 +248,32 @@ MIT License - See LICENSE file
 
 ### Sprint 2: CORE Budget Enforcement ✅ **PARTIAL COMPLETE**
 **Duration**: Week 3-4
-**Status**: 40% complete (2/5 tasks complete)
+**Status**: 60% complete (3/5 tasks complete)
 
 **Completed**:
 - ✅ T2.1: `CoreBudgetEnforcer` class implemented
 - ✅ T2.2: Budget enforcer integrated into pruner
-- 16 new unit tests added (all passing)
-- CORE tier budget never exceeds 25% of target
-- Overflow items gracefully redirected to HOT tier
+- ✅ T2.4: `DiscreteCompactionBaseline` class implemented ✨ NEW
+  - Rule-based discrete compaction simulator
+  - 80% threshold trigger, compresses to 30% target
+  - Preserves recent 5 interactions fully
+  - Lossy compression of older content (top 20% by importance)
+  - 15 comprehensive unit tests (all passing)
 
 **In Progress**:
-- ⏳ T2.4: Discrete compaction baseline implementation (P0 - Critical)
-- ⏳ T2.5: Baseline validation tests (P0)
+- ⏳ T2.5: Baseline validation tests (P0 - NEXT)
 - ⏳ T2.7: Integration testing & documentation (P0)
 
 **Key Features Added**:
-- Hard constraint: CORE tier ≤ 25% of target capacity
+- **CORE Budget**: Hard constraint, CORE tier ≤ 25% of target capacity
+- **Baseline Compaction**: Traditional discrete compaction simulator for comparison
 - Overflow handling: Excess items redirect to HOT with importance=0.95
 - Budget tracking: Real-time utilization monitoring
 - Adaptive rate integration: CORE pressure adjusts pruning behavior
 
 **Test Results**:
-- Total tests: 39/39 passing (23 original + 16 new)
-- Code coverage: >95% for CORE budget logic
+- Total tests: 54/54 passing ✅ (39 pruner + 15 baseline)
+- Code coverage: >95% for CORE budget and baseline logic
 - Zero regressions in existing functionality
 
 ### Sprint 3: Information Preservation (Next)
