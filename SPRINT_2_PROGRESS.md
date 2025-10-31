@@ -251,10 +251,30 @@ class DiscreteCompactionBaseline:
 - [x] Comprehensive unit tests (15 tests, all passing)
 - [x] Integration test validates sawtooth growth pattern vs. steady state
 
-### Pending: T2.5 - Baseline Validation Tests
-**Status**: Not started
+### ✅ T2.5: Baseline Validation Tests
+**Status**: Complete (integrated with T2.4)
 **Priority**: P0
-**Estimated Hours**: 6
+**Hours**: 6 (estimated) / 2 (actual - integrated with T2.4)
+
+**Deliverables**:
+- 15 comprehensive unit tests in `test_baseline.py`
+- All baseline behaviors validated against Technical Specification §3.2.1
+- Integration test comparing baseline vs. continuous pruner growth patterns
+
+**Acceptance Criteria Met**:
+- [x] Test compaction triggers at correct threshold (80%)
+- [x] Test compaction compresses to target (~30%)
+- [x] Test recent interactions preserved (5 interactions = 10 items)
+- [x] Test older content compression (top 20% by importance)
+- [x] Test compaction events tracked correctly
+- [x] Test metrics summary accurate
+- [x] Edge case handling (empty context, very full context, small target size)
+- [x] Multiple compaction cycles validated
+- [x] Integration test: sawtooth pattern (baseline) vs. steady state (pruner)
+
+**Note**: Validation completed as part of T2.4. The 15 unit tests comprehensively validate all specified behaviors.
+
+---
 
 ### Pending: T2.6 - Token Estimation Accuracy Tracking
 **Status**: Not started
@@ -305,21 +325,21 @@ class DiscreteCompactionBaseline:
 
 ## Sprint 2 Progress Summary
 
-**Overall Progress**: 60% complete (3/5 critical tasks)
+**Overall Progress**: 80% complete (4/5 critical tasks)
 
 **Completed**:
 - ✅ T2.1: CoreBudgetEnforcer class (100%)
 - ✅ T2.2: Integration with pruner (100%)
 - ✅ T2.4: DiscreteCompactionBaseline implementation (100%)
+- ✅ T2.5: Baseline validation tests (100%)
 
 **In Progress**:
 - None
 
 **Pending**:
+- ⏳ T2.7: Integration testing & docs (P0 - **Critical - NEXT**)
 - ⏳ T2.3: Unprunable state detection (P1 - Optional)
-- ⏳ T2.5: Baseline validation tests (P0 - **Critical - NEXT**)
 - ⏳ T2.6: Token estimation tracking (P1 - Optional)
-- ⏳ T2.7: Integration testing & docs (P0 - **Critical**)
 
 ---
 
@@ -341,18 +361,11 @@ class DiscreteCompactionBaseline:
 ## Next Steps
 
 ### Immediate (Remainder of Sprint 2)
-1. **T2.4**: Implement `DiscreteCompactionBaseline` class (12 hours)
-   - This is **critical** for Phase I baseline comparison
-   - Required before any comparative experiments
-
-2. **T2.5**: Create baseline validation tests (6 hours)
-   - Ensure baseline behaves as specified
-   - Verify compaction logic correct
-
-3. **T2.7**: Integration testing and documentation (6 hours)
-   - End-to-end tests with CORE budget
+1. **T2.7**: Integration testing and documentation (6 hours) ← **NEXT**
+   - End-to-end tests with CORE budget + baseline
    - Update README and documentation
-   - Prepare Sprint 2 demo
+   - Prepare Sprint 2 completion summary
+   - Validate all P0 components working together
 
 ### Optional (If Time Permits)
 4. **T2.3**: Unprunable state detection (8 hours)

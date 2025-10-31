@@ -246,23 +246,24 @@ MIT License - See LICENSE file
 - Test coverage: 23/23 passing (100%)
 - Ready for Sprint 2
 
-### Sprint 2: CORE Budget Enforcement ✅ **PARTIAL COMPLETE**
+### Sprint 2: CORE Budget Enforcement ✅ **NEARLY COMPLETE**
 **Duration**: Week 3-4
-**Status**: 60% complete (3/5 tasks complete)
+**Status**: 80% complete (4/5 tasks complete)
 
 **Completed**:
 - ✅ T2.1: `CoreBudgetEnforcer` class implemented
 - ✅ T2.2: Budget enforcer integrated into pruner
-- ✅ T2.4: `DiscreteCompactionBaseline` class implemented ✨ NEW
+- ✅ T2.4: `DiscreteCompactionBaseline` class implemented
   - Rule-based discrete compaction simulator
   - 80% threshold trigger, compresses to 30% target
   - Preserves recent 5 interactions fully
   - Lossy compression of older content (top 20% by importance)
+- ✅ T2.5: Baseline validation tests completed
   - 15 comprehensive unit tests (all passing)
+  - Integration test: baseline vs. pruner comparison
 
 **In Progress**:
-- ⏳ T2.5: Baseline validation tests (P0 - NEXT)
-- ⏳ T2.7: Integration testing & documentation (P0)
+- ⏳ T2.7: Integration testing & documentation (P0 - NEXT)
 
 **Key Features Added**:
 - **CORE Budget**: Hard constraint, CORE tier ≤ 25% of target capacity
@@ -285,5 +286,5 @@ MIT License - See LICENSE file
 
 ---
 
-**Status**: Phase I - Sprint 2 Partial (40% complete) ⏳
+**Status**: Phase I - Sprint 2 Nearly Complete (80% complete) 🚀
 **Last Updated**: 2025-10-31
