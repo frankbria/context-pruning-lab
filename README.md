@@ -193,15 +193,16 @@ def prune_after_interaction(new_user_msg, new_agent_response):
 - All overflow scenarios handled gracefully
 - Comprehensive test coverage (54/54 passing)
 
-### Experiment 3: Information Preservation ✅
-**Status**: **Complete** (Sprint 3)
+### Experiment 3: Information Preservation ⚠️
+**Status**: **Preliminary** (Sprint 3)
 **Goal**: Demonstrate >90% CORE decision recall vs. <70% for discrete baseline
 **Results**:
-- **Continuous Pruning**: 100% recall (exceeds >90% target)
-- **Discrete Baseline**: 0% recall (well below <70% target)
-- **Improvement**: +100% absolute (exceeds ≥25% target)
-- All 3 acceptance criteria PASSED
-- Visualization: experiment_3_results.png
+- **Continuous Pruning**: 100% recall ✅
+- **Discrete Baseline**: 100% recall ❌ (expected <70%)
+- **Improvement**: 0% (no discrimination)
+- **Conclusion**: Hypothesis unproven with synthetic testing
+- **Key Learning**: Baseline's "keep top 20% important" heuristic surprisingly robust
+- **Next Step**: Sprint 4 (real coding tasks) required for validation
 
 ### Experiment 4: Code Quality Benchmark (PRIMARY)
 **Status**: To be implemented (Sprint 5-6), **P0 critical**
@@ -298,26 +299,32 @@ MIT License - See LICENSE file
 - Test code: ~535 lines (comprehensive coverage)
 - Documentation: Complete (README, SPRINT_2_SUMMARY, SPRINT_2_PROGRESS)
 
-### Sprint 3: Information Preservation ✅ **COMPLETE**
-**Duration**: Week 5-6 (actual: 2 hours)
-**Status**: 100% complete (1/1 critical task)
+### Sprint 3: Information Preservation ⚠️ **PRELIMINARY**
+**Duration**: Week 5-6 (actual: 4 hours)
+**Status**: Preliminary results (hypothesis needs Sprint 4 validation)
 
 **Completed**:
-- ✅ Experiment 3: Information Preservation validation
-- Perfect recall (100%) for continuous pruning vs. 0% for discrete baseline
-- All 3 acceptance criteria PASSED (exceeded targets)
-- Comprehensive visualization and analysis
+- ✅ Experiment 3 implementation with keyword-based recall testing
+- ✅ Discovered and fixed critical bug (baseline not receiving decisions)
+- ✅ 200-interaction test with realistic asymmetric token pattern
+- ⚠️ Results inconclusive: Both systems achieved 100% recall
 
-**Key Results**:
-- **Continuous Pruning**: 100% CORE decision recall (target: >90%)
-- **Discrete Baseline**: 0% recall (target: <70%)
-- **Improvement**: +100% absolute (target: ≥25%)
-- **Conclusion**: CORE protection eliminates information loss completely
+**Key Findings**:
+- **Continuous Pruning**: 100% recall (validated)
+- **Discrete Baseline**: 100% recall (unexpectedly resilient)
+- **Improvement**: 0% (no discrimination between approaches)
+- **Insight**: Baseline's "keep recent 5 + top 20% important" heuristic more robust than expected
+- **Conclusion**: Synthetic testing insufficient; Sprint 4 (real coding tasks) required for validation
+
+**Why Inconclusive**:
+- Only 2 compaction cycles in 200 interactions (needed 5+)
+- Baseline preserved decisions in "top 20% important items" bucket
+- Keyword presence doesn't capture rationale quality
+- Need real-world task stress for meaningful comparison
 
 **Deliverables**:
-- experiments/experiment_3_preservation.py (420 lines)
-- experiment_3_results.png (2-panel visualization)
-- SPRINT_3_SUMMARY.md (comprehensive analysis)
+- experiments/experiment_3_preservation.py (500+ lines)
+- SPRINT_3_SUMMARY.md (honest analysis of limitations)
 
 ### Sprint 4: Code Quality Benchmark (Next)
 **Duration**: Week 7-8
@@ -329,5 +336,5 @@ MIT License - See LICENSE file
 
 ---
 
-**Status**: Phase I - Sprint 3 Complete ✅ | Ready for Sprint 4 (Code Quality Benchmark)
+**Status**: Phase I - Sprint 3 Preliminary ⚠️ | Sprint 4 (Code Quality) CRITICAL for validation
 **Last Updated**: 2025-10-31

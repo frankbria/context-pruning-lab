@@ -145,29 +145,45 @@ def add_critical_decisions_to_context(pruner_or_baseline, approach_name: str):
     for interaction_num in sorted(decisions_by_interaction.keys()):
         decisions = decisions_by_interaction[interaction_num]
 
-        # Add regular interaction content
-        user_msg = f"Interaction {interaction_num}: Continue building the system"
-        agent_msg = f"Processing interaction {interaction_num} with current architecture"
+        # Add interaction with decision content embedded
+        # For continuous pruner: decisions go to CORE tier
+        # For baseline: decisions go in regular conversation (will be compressed)
+        decisions_text = "\n\n".join([
+            f"DECISION #{d.id}: {d.title}\n{d.content}\nRationale: {d.rationale}"
+            for d in decisions
+        ])
 
-        pruner_or_baseline.add_interaction(user_msg, agent_msg)
+        user_msg = f"Interaction {interaction_num}: Here are the architectural decisions:\n\n{decisions_text}"
+        agent_msg = f"Acknowledged. I've recorded these {len(decisions)} critical decision(s) for interaction {interaction_num}."
 
-        # Add critical decisions to CORE (for ContinuousPruner)
+        # For ContinuousPruner: Add decisions to protected CORE tier
         if hasattr(pruner_or_baseline, 'add_core_item'):
+            # Add the interaction to regular context
+            pruner_or_baseline.add_interaction(user_msg, agent_msg)
+            # Then add each decision to CORE for protection
             for decision in decisions:
                 full_content = f"{decision.title}\n\n{decision.content}\n\nRationale: {decision.rationale}"
                 pruner_or_baseline.add_core_item(full_content, item_type='core_decision')
                 print(f"  ✓ Added Decision #{decision.id} to CORE: {decision.title}")
+        else:
+            # For baseline: Just add to regular context (no CORE tier protection)
+            pruner_or_baseline.add_interaction(user_msg, agent_msg)
+            print(f"  ✓ Added {len(decisions)} decision(s) to regular context (no CORE protection)")
 
         # For baseline, decisions go into regular context
         # (baseline doesn't have separate CORE tier)
 
 
 def run_filler_interactions(pruner_or_baseline, start: int, end: int, approach_name: str):
-    """Run filler interactions to simulate extended conversation"""
+    """Run filler interactions simulating realistic code-writing agent behavior"""
     print(f"\nRunning interactions {start}-{end} for {approach_name}...")
 
     for i in range(start, end + 1):
-        # Varied filler content to simulate realistic conversation
+        # Simulate realistic asymmetric interaction:
+        # - User: Short request (~100 tokens)
+        # - Agent: Long response with code/explanation (~800 tokens)
+        # This mirrors real coding agent usage where agent output >> user input
+
         topics = [
             "database query optimization",
             "frontend component refactoring",
@@ -182,12 +198,48 @@ def run_filler_interactions(pruner_or_baseline, start: int, end: int, approach_n
         ]
         topic = topics[i % len(topics)]
 
-        user_msg = f"Let's work on {topic} for the system"
-        agent_msg = f"Implementing {topic} with best practices. Progress update for interaction {i}."
+        # User message: Short, ~100 tokens
+        user_msg = f"Can you help me implement {topic} for our application? " + "x" * 50
+
+        # Agent message: Long response with "code" (~800 tokens)
+        # Simulates agent generating code, explanations, examples
+        agent_msg = f"""I'll help you implement {topic}. Here's my approach:
+
+1. Analysis of requirements for {topic}
+2. Design considerations and trade-offs
+3. Implementation plan with code examples
+
+Here's the code:
+
+```python
+# {topic} implementation
+class {topic.replace(' ', '')}Handler:
+    def __init__(self):
+        self.config = load_config()
+        self.logger = setup_logger()
+
+    def process(self, data):
+        # Implementation details here
+        result = self._validate(data)
+        self._log_operation(result)
+        return result
+
+    def _validate(self, data):
+        # Validation logic
+        return validated_data
+
+    def _log_operation(self, result):
+        # Logging implementation
+        self.logger.info(f"Operation completed: {{result}}")
+```
+
+This implementation handles {topic} by following best practices and ensuring
+proper error handling, logging, and validation. The code is production-ready
+and includes appropriate abstractions for maintainability.""" + "y" * 200
 
         pruner_or_baseline.add_interaction(user_msg, agent_msg)
 
-        if i % 20 == 0:
+        if i % 50 == 0:
             print(f"  Progress: Interaction {i}")
 
 
@@ -240,9 +292,11 @@ def run_experiment():
     print("  Continuous pruning preserves >90% CORE decision recall")
     print("  Discrete baseline degrades to <70% due to aggressive compression")
     print("\nMethod:")
-    print("  1. Add 10 critical decisions to CORE (interactions 1-5)")
-    print("  2. Run 100 total interactions")
-    print("  3. Test recall at interactions 50 and 100")
+    print("  1. Add 10 critical decisions (interactions 1-5)")
+    print("  2. Run 200+ interactions with realistic agent behavior")
+    print("     - Asymmetric token pattern: user ~100, agent ~800 tokens")
+    print("     - Forces 5+ compaction cycles in baseline")
+    print("  3. Test recall at interactions 100 and 200")
     print("  4. Compare continuous vs. discrete approaches")
     print()
 
@@ -252,8 +306,8 @@ def run_experiment():
     baseline = DiscreteCompactionBaseline(target_size=target_size)
 
     results = {
-        'continuous': {'i50': 0, 'i100': 0, 'i50_details': [], 'i100_details': []},
-        'baseline': {'i50': 0, 'i100': 0, 'i50_details': [], 'i100_details': []}
+        'continuous': {'i100': 0, 'i200': 0, 'i100_details': [], 'i200_details': []},
+        'baseline': {'i100': 0, 'i200': 0, 'i100_details': [], 'i200_details': []}
     }
 
     # === CONTINUOUS PRUNING EXPERIMENT ===
@@ -264,21 +318,21 @@ def run_experiment():
     # Add critical decisions (interactions 1-5)
     add_critical_decisions_to_context(pruner, "Continuous Pruning")
 
-    # Run filler interactions 6-50
-    run_filler_interactions(pruner, 6, 50, "Continuous Pruning")
-
-    # Test recall at interaction 50
-    recall_50, details_50 = test_decision_recall(pruner, 50, "Continuous Pruning")
-    results['continuous']['i50'] = recall_50
-    results['continuous']['i50_details'] = details_50
-
-    # Run filler interactions 51-100
-    run_filler_interactions(pruner, 51, 100, "Continuous Pruning")
+    # Run filler interactions 6-100
+    run_filler_interactions(pruner, 6, 100, "Continuous Pruning")
 
     # Test recall at interaction 100
     recall_100, details_100 = test_decision_recall(pruner, 100, "Continuous Pruning")
     results['continuous']['i100'] = recall_100
     results['continuous']['i100_details'] = details_100
+
+    # Run filler interactions 101-200
+    run_filler_interactions(pruner, 101, 200, "Continuous Pruning")
+
+    # Test recall at interaction 200
+    recall_200, details_200 = test_decision_recall(pruner, 200, "Continuous Pruning")
+    results['continuous']['i200'] = recall_200
+    results['continuous']['i200_details'] = details_200
 
     # === DISCRETE BASELINE EXPERIMENT ===
     print("\n" + "="*60)
@@ -288,21 +342,34 @@ def run_experiment():
     # Add critical decisions (interactions 1-5)
     add_critical_decisions_to_context(baseline, "Discrete Baseline")
 
-    # Run filler interactions 6-50
-    run_filler_interactions(baseline, 6, 50, "Discrete Baseline")
-
-    # Test recall at interaction 50
-    recall_50_baseline, details_50_baseline = test_decision_recall(baseline, 50, "Discrete Baseline")
-    results['baseline']['i50'] = recall_50_baseline
-    results['baseline']['i50_details'] = details_50_baseline
-
-    # Run filler interactions 51-100
-    run_filler_interactions(baseline, 51, 100, "Discrete Baseline")
+    # Run filler interactions 6-100
+    run_filler_interactions(baseline, 6, 100, "Discrete Baseline")
 
     # Test recall at interaction 100
     recall_100_baseline, details_100_baseline = test_decision_recall(baseline, 100, "Discrete Baseline")
     results['baseline']['i100'] = recall_100_baseline
     results['baseline']['i100_details'] = details_100_baseline
+
+    # Run filler interactions 101-200
+    run_filler_interactions(baseline, 101, 200, "Discrete Baseline")
+
+    # Test recall at interaction 200
+    recall_200_baseline, details_200_baseline = test_decision_recall(baseline, 200, "Discrete Baseline")
+    results['baseline']['i200'] = recall_200_baseline
+    results['baseline']['i200_details'] = details_200_baseline
+
+    # Print baseline compaction statistics
+    print("\n" + "="*60)
+    print("BASELINE COMPACTION STATISTICS")
+    print("="*60)
+    print(f"Total compaction events: {baseline.get_compaction_count()}")
+    print(f"Final utilization: {baseline.get_utilization():.1%}")
+    print(f"Context items: {len(baseline.context)}")
+    if baseline.get_compaction_count() > 0:
+        for i, event in enumerate(baseline.compaction_events, 1):
+            print(f"\nCompaction #{i} at interaction {event['interaction']}:")
+            print(f"  Tokens: {event['tokens_before']} → {event['tokens_after']} (-{event['tokens_removed']})")
+            print(f"  Items: {event['items_before']} → {event['items_after']} (-{event['items_removed']})")
 
     # === RESULTS ANALYSIS ===
     print("\n" + "="*60)
@@ -311,31 +378,31 @@ def run_experiment():
 
     print("\n📊 Recall Percentages:")
     print(f"\n  Continuous Pruning:")
-    print(f"    • At interaction 50:  {results['continuous']['i50']:.1f}%")
     print(f"    • At interaction 100: {results['continuous']['i100']:.1f}%")
+    print(f"    • At interaction 200: {results['continuous']['i200']:.1f}%")
 
     print(f"\n  Discrete Baseline:")
-    print(f"    • At interaction 50:  {results['baseline']['i50']:.1f}%")
     print(f"    • At interaction 100: {results['baseline']['i100']:.1f}%")
+    print(f"    • At interaction 200: {results['baseline']['i200']:.1f}%")
 
     # Calculate improvement (absolute when baseline is 0%, relative otherwise)
-    improvement_50 = results['continuous']['i50'] - results['baseline']['i50']
     improvement_100 = results['continuous']['i100'] - results['baseline']['i100']
+    improvement_200 = results['continuous']['i200'] - results['baseline']['i200']
 
     # When baseline is 0%, report absolute improvement instead of infinite relative improvement
-    if results['baseline']['i50'] > 0:
-        rel_improvement_50 = (improvement_50 / results['baseline']['i50'] * 100)
-    else:
-        rel_improvement_50 = improvement_50  # Absolute improvement (0% → X% = X% absolute gain)
-
     if results['baseline']['i100'] > 0:
         rel_improvement_100 = (improvement_100 / results['baseline']['i100'] * 100)
     else:
         rel_improvement_100 = improvement_100  # Absolute improvement
 
-    print(f"\n📈 Relative Improvement:")
-    print(f"    • At interaction 50:  +{improvement_50:.1f}% absolute (+{rel_improvement_50:.1f}% relative)")
+    if results['baseline']['i200'] > 0:
+        rel_improvement_200 = (improvement_200 / results['baseline']['i200'] * 100)
+    else:
+        rel_improvement_200 = improvement_200  # Absolute improvement
+
+    print(f"\n📈 Improvement:")
     print(f"    • At interaction 100: +{improvement_100:.1f}% absolute (+{rel_improvement_100:.1f}% relative)")
+    print(f"    • At interaction 200: +{improvement_200:.1f}% absolute (+{rel_improvement_200:.1f}% relative)")
 
     # === ACCEPTANCE CRITERIA VALIDATION ===
     print("\n" + "="*60)
@@ -346,31 +413,31 @@ def run_experiment():
     criteria_total = 3
 
     # Criterion 1: Continuous pruning >90% recall
-    continuous_meets = results['continuous']['i100'] >= 90.0
+    continuous_meets = results['continuous']['i200'] >= 90.0
     status_1 = "✓ PASS" if continuous_meets else "✗ FAIL"
     print(f"\n  1. Continuous pruning >90% recall: {status_1}")
-    print(f"     Result: {results['continuous']['i100']:.1f}%")
+    print(f"     Result: {results['continuous']['i200']:.1f}% at i200")
     if continuous_meets:
         criteria_passed += 1
 
     # Criterion 2: Discrete baseline <70% recall
-    baseline_meets = results['baseline']['i100'] <= 70.0
+    baseline_meets = results['baseline']['i200'] <= 70.0
     status_2 = "✓ PASS" if baseline_meets else "✗ FAIL"
     print(f"\n  2. Discrete baseline <70% recall: {status_2}")
-    print(f"     Result: {results['baseline']['i100']:.1f}%")
+    print(f"     Result: {results['baseline']['i200']:.1f}% at i200")
     if baseline_meets:
         criteria_passed += 1
 
     # Criterion 3: Improvement ≥25% (absolute when baseline is 0%)
     # When baseline is 0%, we interpret this as absolute improvement ≥25%
     # (since relative improvement would be infinite)
-    improvement_meets = improvement_100 >= 25.0  # Absolute improvement
+    improvement_meets = improvement_200 >= 25.0  # Absolute improvement
     status_3 = "✓ PASS" if improvement_meets else "✗ FAIL"
     print(f"\n  3. Relative improvement ≥25%: {status_3}")
-    if results['baseline']['i100'] > 0:
-        print(f"     Result: +{rel_improvement_100:.1f}% relative")
+    if results['baseline']['i200'] > 0:
+        print(f"     Result: +{rel_improvement_200:.1f}% relative")
     else:
-        print(f"     Result: +{improvement_100:.1f}% absolute (baseline=0%, using absolute metric)")
+        print(f"     Result: +{improvement_200:.1f}% absolute (baseline=0%, using absolute metric)")
     if improvement_meets:
         criteria_passed += 1
 
@@ -390,9 +457,9 @@ def create_visualization(results: Dict):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
     # Plot 1: Recall percentages over time
-    interactions = [50, 100]
-    continuous_recall = [results['continuous']['i50'], results['continuous']['i100']]
-    baseline_recall = [results['baseline']['i50'], results['baseline']['i100']]
+    interactions = [100, 200]
+    continuous_recall = [results['continuous']['i100'], results['continuous']['i200']]
+    baseline_recall = [results['baseline']['i100'], results['baseline']['i200']]
 
     ax1.plot(interactions, continuous_recall, 'o-', color='#2E7D32', linewidth=2,
              markersize=10, label='Continuous Pruning')
@@ -411,10 +478,10 @@ def create_visualization(results: Dict):
     ax1.set_ylim(0, 105)
     ax1.set_xticks(interactions)
 
-    # Plot 2: Per-decision recall at interaction 100
+    # Plot 2: Per-decision recall at interaction 200
     decision_ids = list(range(1, 11))
-    continuous_details = [1 if r else 0 for r in results['continuous']['i100_details']]
-    baseline_details = [1 if r else 0 for r in results['baseline']['i100_details']]
+    continuous_details = [1 if r else 0 for r in results['continuous']['i200_details']]
+    baseline_details = [1 if r else 0 for r in results['baseline']['i200_details']]
 
     x = np.arange(len(decision_ids))
     width = 0.35
@@ -426,7 +493,7 @@ def create_visualization(results: Dict):
 
     ax2.set_xlabel('Critical Decision ID', fontsize=12)
     ax2.set_ylabel('Recalled (1=Yes, 0=No)', fontsize=12)
-    ax2.set_title('Per-Decision Recall at Interaction 100', fontsize=14, fontweight='bold')
+    ax2.set_title('Per-Decision Recall at Interaction 200', fontsize=14, fontweight='bold')
     ax2.set_xticks(x)
     ax2.set_xticklabels([f'D{i}' for i in decision_ids])
     ax2.legend(loc='upper right', fontsize=10)

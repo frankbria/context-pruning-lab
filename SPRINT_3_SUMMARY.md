@@ -1,19 +1,27 @@
-# Sprint 3 Completion Summary: Information Preservation
+# Sprint 3 Summary: Information Preservation (Preliminary)
 
-**Sprint Duration**: Week 5-6 (actual: 2 hours)
-**Status**: ✅ **COMPLETE** (All acceptance criteria exceeded)
+**Sprint Duration**: Week 5-6 (actual: 4 hours)
+**Status**: ⚠️ **PRELIMINARY** (Hypothesis needs Sprint 4 validation)
 **Date**: 2025-10-31
 
 ---
 
 ## Executive Summary
 
-Sprint 3 successfully validated the **Information Preservation** hypothesis with results **exceeding expectations**:
-- ✅ Continuous pruning: **100% recall** (target: >90%)
-- ✅ Discrete baseline: **0% recall** (target: <70%)
-- ✅ Absolute improvement: **+100%** (target: ≥25%)
+Sprint 3 attempted to validate the **Information Preservation** hypothesis through keyword-based recall testing. Results revealed important limitations of synthetic testing:
 
-**Key Finding**: CORE budget enforcement completely eliminates critical decision loss, while traditional discrete compaction loses all CORE decisions within 100 interactions.
+**Initial Results** (with bug):
+- Continuous pruning: 100% recall
+- Discrete baseline: 0% recall (baseline never received decisions - bug)
+
+**Corrected Results** (200 interactions, realistic agent behavior):
+- Continuous pruning: 100% recall ✅
+- Discrete baseline: 100% recall ❌ (failed to show expected degradation)
+- Improvement: 0% (no discrimination)
+
+**Key Finding**: The discrete baseline's heuristic (keep recent 5 interactions + top 20% by importance) is **more resilient than hypothesized** for synthetic workloads. Only 2 compaction cycles in 200 interactions wasn't enough stress to force information loss.
+
+**Conclusion**: Keyword-based testing with synthetic interactions is insufficient. **Sprint 4 (real coding tasks) is required** for proper hypothesis validation.
 
 ---
 
@@ -146,43 +154,49 @@ All 3 criteria **PASSED**:
 
 ## Key Findings
 
-### 1. CORE Protection is Effective
+### 1. Experiment Design Flaw Discovered (Critical Learning)
 
-**Continuous pruner** with CORE budget enforcement:
-- All 10 critical decisions remained in CORE tier
-- No degradation over 100 interactions
-- Perfect keyword preservation (≥75% coverage per decision)
-- Budget enforcement prevented CORE overflow
+**Initial bug**: Baseline never received decision content
+- Decisions only added to continuous pruner's CORE tier
+- Baseline got generic filler messages only
+- Result: 0% recall was misleading (decisions were never there to recall)
+- **Fixed**: Both systems now receive decision content in conversation
 
-**Discrete baseline** without CORE protection:
-- All decisions treated as regular context
-- Compressed away by interaction 50
-- Only trace keywords remaining (1-4 keywords total across all decisions)
-- Demonstrates catastrophic information loss
+### 2. Baseline More Resilient Than Expected
 
-### 2. Stronger Results Than Expected
+**Discrete baseline** performance with corrected experiment:
+- **100% recall** at both i100 and i200 checkpoints
+- Only **2 compaction events** in 200 interactions
+- Strategy: Keep recent 5 interactions + top 20% of older items by importance
+- **This heuristic is surprisingly effective** at preserving critical decisions
 
-**Hypothesis**: Continuous >90%, Baseline <70%
-**Actual**: Continuous 100%, Baseline 0%
+**Why decisions survived**:
+- Added at interactions 1-5
+- High importance scores (architectural decisions)
+- Preserved in "top 20% of older items" bucket through compactions
+- Even after 76% context reduction (192→46 items), decisions remained
 
-This indicates:
-- CORE protection is **perfect** for critical decisions
-- Discrete compaction **completely loses** critical info without protection
-- The improvement is not gradual—it's **categorical**
+### 3. Synthetic Testing Limitations
 
-### 3. Methodology Validation
+**Insufficient stress for discrimination**:
+- 200 interactions with 40K target → only 2 compactions
+- Needed 5+ compactions to force information loss
+- Asymmetric token pattern (user ~100, agent ~800) was realistic
+- But total volume insufficient to trigger aggressive compaction
 
-**Keyword-based recall** successfully measured:
-- Easy to implement (no LLM queries needed)
-- Objective and reproducible
-- Captures essential information preservation
-- Aligns with qualitative assessment (decisions are/aren't in context)
+**Keyword-based recall** limitations:
+- Binary metric (present/absent) doesn't capture degradation nuance
+- Doesn't test if agent can explain *why* decisions were made
+- Doesn't measure rationale preservation quality
+- Real coding tasks needed for meaningful validation
 
-**100-interaction test** was sufficient:
-- Baseline compacted 2-3 times by i100
-- Long enough to show degradation
-- Continuous pruner reached steady state
-- Sufficient to validate hypothesis
+### 4. Continuous Pruner Validation
+
+**Continuous pruning** performed as expected:
+- 100% recall at all checkpoints ✅
+- CORE tier protected decisions perfectly ✅
+- No degradation over 200 interactions ✅
+- System behavior validated, but lack of baseline degradation prevents comparative validation
 
 ---
 
@@ -292,18 +306,33 @@ This indicates:
 
 ## Conclusion
 
-Sprint 3 delivered **decisive validation** of information preservation:
-- **CORE budget enforcement works perfectly** - 100% recall
-- **Discrete compaction fails catastrophically** - 0% recall
-- **Improvement far exceeds target** - +100% vs. ≥25%
+Sprint 3 revealed **important limitations of synthetic testing** while validating continuous pruner behavior:
 
-This experiment provides **strong evidence** that continuous pruning with CORE protection is fundamentally superior to discrete compaction for preserving critical information in long conversations.
+**What We Validated**:
+- ✅ CORE budget enforcement works perfectly (100% recall)
+- ✅ Continuous pruner maintains decisions across 200 interactions
+- ✅ Experiment infrastructure functional and extensible
+- ✅ Discovered and fixed critical bug in baseline comparison
 
-**Sprint 3 Status**: ✅ **COMPLETE** (All acceptance criteria exceeded)
+**What We Didn't Validate**:
+- ❌ Baseline degradation (100% recall, same as continuous)
+- ❌ Comparative advantage (0% improvement, no discrimination)
+- ❌ Information loss patterns under real workload
+- ❌ Rationale preservation quality
 
-**Phase I Progress**: 75% complete (Sprints 1-3 done, Sprint 4 remaining)
+**Why Sprint 4 is Critical**:
+- Real coding tasks will stress both systems properly
+- Actual agent behavior (not synthetic) will trigger more compactions
+- Code quality metrics more discriminating than keyword presence
+- Task completion success/failure is objective validation
 
-**Next Milestone**: Sprint 4 (Code Quality Benchmark) - **Final Phase I validation**
+**Honest Assessment**: The hypothesis (continuous > discrete for preservation) **remains unproven** with synthetic data. The baseline's simple heuristic is more robust than expected. Sprint 4's real-world coding tasks are essential for validation.
+
+**Sprint 3 Status**: ⚠️ **PRELIMINARY** (Hypothesis needs Sprint 4 for validation)
+
+**Phase I Progress**: 75% complete (Sprints 1-2 validated, Sprint 3 preliminary, Sprint 4 critical)
+
+**Next Milestone**: Sprint 4 (Code Quality Benchmark) - **REQUIRED for Phase I validation**
 
 ---
 
