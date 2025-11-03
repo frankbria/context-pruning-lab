@@ -11,15 +11,18 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not required, can use system env vars
+
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # Import pruning components
-from pruner import (
-    ContinuousPruner,
-    ContextItem,
-    PruningMetrics
-)
+from pruner import ContinuousPruner
 
 # Import discrete baseline
 from baseline import DiscreteCompactionBaseline
@@ -77,15 +80,14 @@ class RealCodingAgent:
             )
         elif self.strategy == "discrete_baseline":
             self.context_manager = DiscreteCompactionBaseline(
-                max_size=config.target_context_size
+                target_size=config.target_context_size
             )
         else:
             raise ValueError(f"Unknown strategy: {self.strategy}")
 
-        # Track conversation
-        self.conversation_history: List[Dict[str, str]] = []
+        # Track conversation for API
+        self.pending_user_message: Optional[str] = None
         self.generated_code_parts: List[str] = []
-        self.interaction_count = 0
 
         # Statistics
         self.total_tokens_sent = 0
@@ -100,12 +102,11 @@ class RealCodingAgent:
             )
         else:
             self.context_manager = DiscreteCompactionBaseline(
-                max_size=self.config.target_context_size
+                target_size=self.config.target_context_size
             )
 
-        self.conversation_history = []
+        self.pending_user_message = None
         self.generated_code_parts = []
-        self.interaction_count = 0
         self.total_tokens_sent = 0
         self.total_tokens_received = 0
 
@@ -116,27 +117,8 @@ class RealCodingAgent:
         Args:
             content: User message content
         """
-        self.interaction_count += 1
-
-        # Add to conversation history
-        message = {
-            'role': 'user',
-            'content': content
-        }
-        self.conversation_history.append(message)
-
-        # Add to context manager
-        context_item = ContextItem(
-            content=content,
-            item_type='user_message',
-            interaction_number=self.interaction_count
-        )
-
-        if self.strategy == "continuous_pruning":
-            self.context_manager.add_item(context_item)
-        else:
-            # Discrete baseline just tracks messages
-            self.context_manager.add_interaction(message)
+        # Store message until generate_response is called
+        self.pending_user_message = content
 
     def generate_response(self) -> str:
         """
@@ -145,11 +127,17 @@ class RealCodingAgent:
         Returns:
             Generated response content
         """
-        # Get current context (after pruning if applicable)
-        if self.strategy == "continuous_pruning":
-            context_messages = self._build_context_from_pruner()
-        else:
-            context_messages = self._build_context_from_baseline()
+        if not self.pending_user_message:
+            return "Error: No user message to respond to"
+
+        # Build context from context manager
+        context_messages = self._build_context_messages()
+
+        # Add current user message
+        context_messages.append({
+            'role': 'user',
+            'content': self.pending_user_message
+        })
 
         # Call Claude API
         try:
@@ -172,26 +160,20 @@ class RealCodingAgent:
             response_text = f"Error generating response: {str(e)}"
             print(f"Claude API error: {e}")
 
-        # Add response to conversation history
-        assistant_message = {
-            'role': 'assistant',
-            'content': response_text
-        }
-        self.conversation_history.append(assistant_message)
-
-        # Add to context manager
-        context_item = ContextItem(
-            content=response_text,
-            item_type='agent_response',
-            interaction_number=self.interaction_count
-        )
-
+        # Add interaction to context manager
         if self.strategy == "continuous_pruning":
-            self.context_manager.add_item(context_item)
-            # Continuous pruning happens automatically in add_item
-        else:
-            self.context_manager.add_interaction(assistant_message)
-            # Discrete baseline checks threshold and compacts if needed
+            self.context_manager.add_interaction(
+                user_message=self.pending_user_message,
+                agent_response=response_text
+            )
+        else:  # discrete_baseline
+            self.context_manager.add_interaction(
+                user_msg=self.pending_user_message,
+                agent_msg=response_text
+            )
+
+        # Clear pending message
+        self.pending_user_message = None
 
         # Extract code if present
         code = self._extract_code_from_response(response_text)
@@ -200,42 +182,27 @@ class RealCodingAgent:
 
         return response_text
 
-    def _build_context_from_pruner(self) -> List[Dict[str, str]]:
+    def _build_context_messages(self) -> List[Dict[str, str]]:
         """
-        Build context messages from continuous pruner.
+        Build context messages from context manager.
 
         Returns:
             List of messages in Claude API format
         """
         messages = []
 
-        # Get all items from pruner (already pruned)
-        for item in self.context_manager.items:
-            if item.item_type == 'user_message':
+        # Get context items from manager
+        for item in self.context_manager.context:
+            if item.item_type in ['user_message']:
                 messages.append({
                     'role': 'user',
                     'content': item.content
                 })
-            elif item.item_type == 'agent_response':
+            elif item.item_type in ['agent_response']:
                 messages.append({
                     'role': 'assistant',
                     'content': item.content
                 })
-
-        # Ensure alternating user/assistant pattern
-        messages = self._ensure_alternating_roles(messages)
-
-        return messages
-
-    def _build_context_from_baseline(self) -> List[Dict[str, str]]:
-        """
-        Build context messages from discrete baseline.
-
-        Returns:
-            List of messages in Claude API format
-        """
-        # Discrete baseline keeps full conversation until threshold hit
-        messages = self.context_manager.get_context()
 
         # Ensure alternating roles
         messages = self._ensure_alternating_roles(messages)
@@ -290,9 +257,10 @@ class RealCodingAgent:
         if result and result[0]['role'] != 'user':
             result = result[1:]
 
-        # Ensure we don't end with user (need assistant turn)
+        # If we end with user (shouldn't happen but handle it)
         if result and result[-1]['role'] == 'user':
-            # Can't generate yet - this shouldn't happen if called correctly
+            # This is problematic for generating a response
+            # But we'll let the API call handle adding the new user message
             pass
 
         return result
@@ -328,15 +296,14 @@ class RealCodingAgent:
             Dictionary with context metrics
         """
         if self.strategy == "continuous_pruning":
-            metrics = self.context_manager.get_metrics()
             return {
                 'total_tokens': self.total_tokens_sent + self.total_tokens_received,
                 'tokens_sent': self.total_tokens_sent,
                 'tokens_received': self.total_tokens_received,
-                'context_size': metrics.current_token_count,
-                'pruning_operations': len(self.context_manager.items),  # Approximation
-                'tokens_pruned': metrics.tokens_removed,
-                'num_messages': len(self.conversation_history),
+                'context_size': self.context_manager.get_total_tokens(),
+                'pruning_operations': self.context_manager.interaction_count,
+                'tokens_pruned': self.context_manager.metrics.tokens_removed,
+                'num_messages': len(self.context_manager.context),
                 'strategy': self.strategy
             }
         else:
@@ -345,10 +312,10 @@ class RealCodingAgent:
                 'total_tokens': self.total_tokens_sent + self.total_tokens_received,
                 'tokens_sent': self.total_tokens_sent,
                 'tokens_received': self.total_tokens_received,
-                'context_size': self.context_manager.get_current_size(),
-                'pruning_operations': self.context_manager.compaction_count,
-                'tokens_pruned': self.context_manager.tokens_removed,
-                'num_messages': len(self.conversation_history),
+                'context_size': self.context_manager.current_tokens,
+                'pruning_operations': len(self.context_manager.compaction_events),
+                'tokens_pruned': sum(e.get('tokens_removed', 0) for e in self.context_manager.compaction_events),
+                'num_messages': len(self.context_manager.context),
                 'strategy': self.strategy
             }
 
@@ -359,14 +326,6 @@ class RealCodingAgent:
         Returns:
             Combined generated code
         """
-        if not self.generated_code_parts:
-            # Fallback: try to extract from all assistant messages
-            for msg in self.conversation_history:
-                if msg['role'] == 'assistant':
-                    code = self._extract_code_from_response(msg['content'])
-                    if code:
-                        self.generated_code_parts.append(code)
-
         return '\n\n'.join(self.generated_code_parts)
 
 

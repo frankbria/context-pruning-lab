@@ -1,0 +1,569 @@
+{
+  "experiment_name": "exp4_20251103_165534",
+  "statistics": {
+    "tasks_attempted": 4,
+    "tasks_succeeded": 0,
+    "tasks_failed": 4,
+    "total_execution_time": 2.709784507751465
+  },
+  "results": {
+    "continuous_pruning": [
+      {
+        "task_id": "synthetic_010",
+        "strategy": "continuous_pruning",
+        "success": false,
+        "generated_code": "",
+        "test_results": {
+          "all_passed": false,
+          "num_tests": 1,
+          "passed": 0,
+          "failed": 1,
+          "execution_method": "mocked"
+        },
+        "metrics": {
+          "execution_time": 1.0674324035644531,
+          "num_turns": 19,
+          "total_tokens": 0,
+          "context_size": 0,
+          "pruning_operations": 8,
+          "tokens_pruned": 55,
+          "code_quality_scores": {
+            "Task Completion Rate": 0.3,
+            "Specification Adherence": 0.5,
+            "Code Quality": 0.425,
+            "Token Efficiency": 0.0
+          },
+          "aggregate_score": 0.35500000000000004
+        },
+        "conversation_history": [
+          {
+            "turn_number": 1,
+            "role": "user",
+            "content": "I need help with an issue in the python-utils repository.\n\n# Bug: String reversal function fails on empty strings\n\n## Description\nThe `reverse_string()` function in `string_utils.py` raises an IndexError when given an empty string as input.\n\n## Expected Behavior\nShould return an empty string without errors.\n\n## Current Behavior\n```python\nreverse_string('')  # IndexError: string index out of range\n```\n\n## Steps to Reproduce\n1. Call `reverse_string('')`\n2. Observe IndexError\n\n## Proposed Solution\nAdd empty string check before processing.\n\nCan you help me fix this?",
+            "turn_type": "clarification",
+            "metadata": {
+              "phase": "issue_presentation"
+            }
+          },
+          {
+            "turn_number": 2,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroFZDDSpqPuZLC2Vc2'}",
+            "turn_type": "clarification",
+            "metadata": {
+              "phase": "clarification",
+              "exchange": 1
+            }
+          },
+          {
+            "turn_number": 3,
+            "role": "user",
+            "content": "It's consistent - happens every time with the specific input pattern I mentioned.",
+            "turn_type": "clarification",
+            "metadata": {
+              "phase": "clarification",
+              "exchange": 1
+            }
+          },
+          {
+            "turn_number": 4,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroG3yhUrvykYAn1eye'}",
+            "turn_type": "planning",
+            "metadata": {
+              "phase": "planning"
+            }
+          },
+          {
+            "turn_number": 5,
+            "role": "user",
+            "content": "Let's start with the core implementation.",
+            "turn_type": "coding",
+            "metadata": {
+              "phase": "coding",
+              "iteration": 1
+            }
+          },
+          {
+            "turn_number": 6,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroGYVktZPwVKf3ppG4'}",
+            "turn_type": "noise",
+            "metadata": {
+              "noise_type": "logs",
+              "importance": 0.1
+            }
+          },
+          {
+            "turn_number": 7,
+            "role": "assistant",
+            "content": "Error: No user message to respond to",
+            "turn_type": "coding",
+            "metadata": {
+              "phase": "coding",
+              "iteration": 1,
+              "code_length": 218
+            }
+          },
+          {
+            "turn_number": 8,
+            "role": "assistant",
+            "content": "Error: No user message to respond to",
+            "turn_type": "noise",
+            "metadata": {
+              "noise_type": "logs",
+              "importance": 0.1
+            }
+          },
+          {
+            "turn_number": 9,
+            "role": "user",
+            "content": "What would the updated code look like?",
+            "turn_type": "coding",
+            "metadata": {
+              "phase": "coding",
+              "iteration": 2
+            }
+          },
+          {
+            "turn_number": 10,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroHEv4HXL4F1VT9mqD'}",
+            "turn_type": "noise",
+            "metadata": {
+              "noise_type": "system_info",
+              "importance": 0.1
+            }
+          },
+          {
+            "turn_number": 11,
+            "role": "assistant",
+            "content": "Error: No user message to respond to",
+            "turn_type": "coding",
+            "metadata": {
+              "phase": "coding",
+              "iteration": 2,
+              "code_length": 218
+            }
+          },
+          {
+            "turn_number": 12,
+            "role": "user",
+            "content": "I'm getting this error when running the tests:\n\n```\nTypeError: unsupported operand type(s) for +: 'NoneType' and 'int'\n  File main.py, line 15\n```",
+            "turn_type": "debugging",
+            "metadata": {
+              "phase": "debugging",
+              "iteration": 1
+            }
+          },
+          {
+            "turn_number": 13,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroHhSxSFrqMf539xgk'}",
+            "turn_type": "debugging",
+            "metadata": {
+              "phase": "debugging",
+              "iteration": 1
+            }
+          },
+          {
+            "turn_number": 14,
+            "role": "user",
+            "content": "The tests are failing with:\n\n```\nValueError: invalid literal for int() with base 10: 'abc'\n  File parser.py, line 23\n```\n\nWhat's causing this?",
+            "turn_type": "debugging",
+            "metadata": {
+              "phase": "debugging",
+              "iteration": 2
+            }
+          },
+          {
+            "turn_number": 15,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroJDCeFxSRyrifvjMV'}",
+            "turn_type": "debugging",
+            "metadata": {
+              "phase": "debugging",
+              "iteration": 2
+            }
+          },
+          {
+            "turn_number": 16,
+            "role": "user",
+            "content": "Can you add more comments explaining the logic?",
+            "turn_type": "refinement",
+            "metadata": {
+              "phase": "refinement",
+              "iteration": 1
+            }
+          },
+          {
+            "turn_number": 17,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroJkSivKNKgWvN3XAd'}",
+            "turn_type": "refinement",
+            "metadata": {
+              "phase": "refinement",
+              "iteration": 1
+            }
+          },
+          {
+            "turn_number": 18,
+            "role": "user",
+            "content": "Can you refactor this to be more readable?",
+            "turn_type": "refinement",
+            "metadata": {
+              "phase": "refinement",
+              "iteration": 2
+            }
+          },
+          {
+            "turn_number": 19,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroKExqrNagjbVJNJab'}",
+            "turn_type": "refinement",
+            "metadata": {
+              "phase": "refinement",
+              "iteration": 2
+            }
+          }
+        ],
+        "context_stats": {
+          "total_tokens": 0,
+          "tokens_sent": 0,
+          "tokens_received": 0,
+          "context_size": 0,
+          "pruning_operations": 8,
+          "tokens_pruned": 55,
+          "num_messages": 0,
+          "strategy": "continuous_pruning"
+        },
+        "execution_time": 1.0674324035644531,
+        "error_message": ""
+      },
+      {
+        "task_id": "synthetic_011",
+        "strategy": "continuous_pruning",
+        "success": false,
+        "generated_code": "",
+        "test_results": {
+          "all_passed": false,
+          "num_tests": 1,
+          "passed": 0,
+          "failed": 1,
+          "execution_method": "mocked"
+        },
+        "metrics": {
+          "execution_time": 1.1964011192321777,
+          "num_turns": 19,
+          "total_tokens": 0,
+          "context_size": 0,
+          "pruning_operations": 8,
+          "tokens_pruned": 55,
+          "code_quality_scores": {
+            "Task Completion Rate": 0.3,
+            "Specification Adherence": 0.5,
+            "Code Quality": 0.425,
+            "Token Efficiency": 0.0
+          },
+          "aggregate_score": 0.35500000000000004
+        },
+        "conversation_history": [
+          {
+            "turn_number": 1,
+            "role": "user",
+            "content": "I need help with an issue in the data-structures repository.\n\n# Feature: Add custom sort key parameter\n\n## Description\nThe `sort_list()` function should accept an optional `key` parameter for custom sorting, similar to Python's built-in `sorted()`.\n\n## Requested Behavior\n```python\nsort_list([{'name': 'Bob', 'age': 25}, {'name': 'Alice', 'age': 30}], key=lambda x: x['age'])\n```\n\n\nCan you help me fix this?",
+            "turn_type": "clarification",
+            "metadata": {
+              "phase": "issue_presentation"
+            }
+          },
+          {
+            "turn_number": 2,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroL5p76JN7CGuM7z2T'}",
+            "turn_type": "clarification",
+            "metadata": {
+              "phase": "clarification",
+              "exchange": 1
+            }
+          },
+          {
+            "turn_number": 3,
+            "role": "user",
+            "content": "It's consistent - happens every time with the specific input pattern I mentioned.",
+            "turn_type": "clarification",
+            "metadata": {
+              "phase": "clarification",
+              "exchange": 1
+            }
+          },
+          {
+            "turn_number": 4,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroLXMo6w1bmBrC9NfE'}",
+            "turn_type": "planning",
+            "metadata": {
+              "phase": "planning"
+            }
+          },
+          {
+            "turn_number": 5,
+            "role": "user",
+            "content": "Let's start with the core implementation.",
+            "turn_type": "coding",
+            "metadata": {
+              "phase": "coding",
+              "iteration": 1
+            }
+          },
+          {
+            "turn_number": 6,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroM3cZWnVJokSRu85f'}",
+            "turn_type": "noise",
+            "metadata": {
+              "noise_type": "logs",
+              "importance": 0.1
+            }
+          },
+          {
+            "turn_number": 7,
+            "role": "assistant",
+            "content": "Error: No user message to respond to",
+            "turn_type": "coding",
+            "metadata": {
+              "phase": "coding",
+              "iteration": 1,
+              "code_length": 294
+            }
+          },
+          {
+            "turn_number": 8,
+            "role": "assistant",
+            "content": "Error: No user message to respond to",
+            "turn_type": "noise",
+            "metadata": {
+              "noise_type": "logs",
+              "importance": 0.1
+            }
+          },
+          {
+            "turn_number": 9,
+            "role": "user",
+            "content": "What would the updated code look like?",
+            "turn_type": "coding",
+            "metadata": {
+              "phase": "coding",
+              "iteration": 2
+            }
+          },
+          {
+            "turn_number": 10,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroMXt8a6GiZZxQKdqY'}",
+            "turn_type": "noise",
+            "metadata": {
+              "noise_type": "system_info",
+              "importance": 0.1
+            }
+          },
+          {
+            "turn_number": 11,
+            "role": "assistant",
+            "content": "Error: No user message to respond to",
+            "turn_type": "coding",
+            "metadata": {
+              "phase": "coding",
+              "iteration": 2,
+              "code_length": 294
+            }
+          },
+          {
+            "turn_number": 12,
+            "role": "user",
+            "content": "I'm getting this error when running the tests:\n\n```\nTypeError: unsupported operand type(s) for +: 'NoneType' and 'int'\n  File main.py, line 15\n```",
+            "turn_type": "debugging",
+            "metadata": {
+              "phase": "debugging",
+              "iteration": 1
+            }
+          },
+          {
+            "turn_number": 13,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroNp2F857EKkgPBpWV'}",
+            "turn_type": "debugging",
+            "metadata": {
+              "phase": "debugging",
+              "iteration": 1
+            }
+          },
+          {
+            "turn_number": 14,
+            "role": "user",
+            "content": "The tests are failing with:\n\n```\nValueError: invalid literal for int() with base 10: 'abc'\n  File parser.py, line 23\n```\n\nWhat's causing this?",
+            "turn_type": "debugging",
+            "metadata": {
+              "phase": "debugging",
+              "iteration": 2
+            }
+          },
+          {
+            "turn_number": 15,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroPFKRGgFThosYDGPQ'}",
+            "turn_type": "debugging",
+            "metadata": {
+              "phase": "debugging",
+              "iteration": 2
+            }
+          },
+          {
+            "turn_number": 16,
+            "role": "user",
+            "content": "Can you add more comments explaining the logic?",
+            "turn_type": "refinement",
+            "metadata": {
+              "phase": "refinement",
+              "iteration": 1
+            }
+          },
+          {
+            "turn_number": 17,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroPhrRnWF4jznVHAjV'}",
+            "turn_type": "refinement",
+            "metadata": {
+              "phase": "refinement",
+              "iteration": 1
+            }
+          },
+          {
+            "turn_number": 18,
+            "role": "user",
+            "content": "Can you refactor this to be more readable?",
+            "turn_type": "refinement",
+            "metadata": {
+              "phase": "refinement",
+              "iteration": 2
+            }
+          },
+          {
+            "turn_number": 19,
+            "role": "assistant",
+            "content": "Error generating response: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CUmroQAdQ8QCzUfx5JUTf'}",
+            "turn_type": "refinement",
+            "metadata": {
+              "phase": "refinement",
+              "iteration": 2
+            }
+          }
+        ],
+        "context_stats": {
+          "total_tokens": 0,
+          "tokens_sent": 0,
+          "tokens_received": 0,
+          "context_size": 0,
+          "pruning_operations": 8,
+          "tokens_pruned": 55,
+          "num_messages": 0,
+          "strategy": "continuous_pruning"
+        },
+        "execution_time": 1.1964011192321777,
+        "error_message": ""
+      }
+    ],
+    "discrete_baseline": [
+      {
+        "task_id": "synthetic_010",
+        "strategy": "discrete_baseline",
+        "success": false,
+        "generated_code": "",
+        "test_results": {},
+        "metrics": {
+          "execution_time": 0.25334692001342773,
+          "num_turns": 1,
+          "total_tokens": 0,
+          "context_size": 0,
+          "pruning_operations": 0,
+          "tokens_pruned": 0,
+          "code_quality_scores": {
+            "Task Completion Rate": 0.3,
+            "Specification Adherence": 0.5,
+            "Code Quality": 0.425,
+            "Token Efficiency": 0.0
+          },
+          "aggregate_score": 0.35500000000000004
+        },
+        "conversation_history": [
+          {
+            "turn_number": 1,
+            "role": "user",
+            "content": "I need help with an issue in the python-utils repository.\n\n# Bug: String reversal function fails on empty strings\n\n## Description\nThe `reverse_string()` function in `string_utils.py` raises an IndexError when given an empty string as input.\n\n## Expected Behavior\nShould return an empty string without errors.\n\n## Current Behavior\n```python\nreverse_string('')  # IndexError: string index out of range\n```\n\n## Steps to Reproduce\n1. Call `reverse_string('')`\n2. Observe IndexError\n\n## Proposed Solution\nAdd empty string check before processing.\n\nCan you help me fix this?",
+            "turn_type": "clarification",
+            "metadata": {
+              "phase": "issue_presentation"
+            }
+          }
+        ],
+        "context_stats": {
+          "total_tokens": 0,
+          "tokens_sent": 0,
+          "tokens_received": 0,
+          "context_size": 0,
+          "pruning_operations": 0,
+          "tokens_pruned": 0,
+          "num_messages": 0,
+          "strategy": "discrete_baseline"
+        },
+        "execution_time": 0.25334692001342773,
+        "error_message": "DiscreteCompactionBaseline.add_interaction() got an unexpected keyword argument 'user_message'"
+      },
+      {
+        "task_id": "synthetic_011",
+        "strategy": "discrete_baseline",
+        "success": false,
+        "generated_code": "",
+        "test_results": {},
+        "metrics": {
+          "execution_time": 0.19260406494140625,
+          "num_turns": 1,
+          "total_tokens": 0,
+          "context_size": 0,
+          "pruning_operations": 0,
+          "tokens_pruned": 0,
+          "code_quality_scores": {
+            "Task Completion Rate": 0.3,
+            "Specification Adherence": 0.5,
+            "Code Quality": 0.425,
+            "Token Efficiency": 0.0
+          },
+          "aggregate_score": 0.35500000000000004
+        },
+        "conversation_history": [
+          {
+            "turn_number": 1,
+            "role": "user",
+            "content": "I need help with an issue in the data-structures repository.\n\n# Feature: Add custom sort key parameter\n\n## Description\nThe `sort_list()` function should accept an optional `key` parameter for custom sorting, similar to Python's built-in `sorted()`.\n\n## Requested Behavior\n```python\nsort_list([{'name': 'Bob', 'age': 25}, {'name': 'Alice', 'age': 30}], key=lambda x: x['age'])\n```\n\n\nCan you help me fix this?",
+            "turn_type": "clarification",
+            "metadata": {
+              "phase": "issue_presentation"
+            }
+          }
+        ],
+        "context_stats": {
+          "total_tokens": 0,
+          "tokens_sent": 0,
+          "tokens_received": 0,
+          "context_size": 0,
+          "pruning_operations": 0,
+          "tokens_pruned": 0,
+          "num_messages": 0,
+          "strategy": "discrete_baseline"
+        },
+        "execution_time": 0.19260406494140625,
+        "error_message": "DiscreteCompactionBaseline.add_interaction() got an unexpected keyword argument 'user_message'"
+      }
+    ]
+  }
+}
