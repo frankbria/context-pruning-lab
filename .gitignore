@@ -32,3 +32,4 @@ experiments/output/
 # OS
 .DS_Store
 Thumbs.db
+results/experiment_4/*.json
