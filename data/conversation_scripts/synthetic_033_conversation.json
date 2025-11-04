@@ -1,0 +1,274 @@
+{
+  "task_id": "synthetic_033",
+  "seed": 42,
+  "template_version": "1.0",
+  "metadata": {
+    "task_difficulty": "medium",
+    "task_type": "bug_fix",
+    "num_phases": 6,
+    "includes_noise": true
+  },
+  "num_turns": 26,
+  "turns": [
+    {
+      "turn_number": 1,
+      "role": "user",
+      "content": "I need help with an issue in the cache-system repository.\n\n# Bug: Cache not invalidated after data update\n\n## Description\nWhen data is updated via `update_record()`, the cache still returns stale data. Cache invalidation logic is not being triggered.\n\n## Expected Behavior\nCache should be invalidated or updated when underlying data changes.\n\n## Current Behavior\n```python\nget_record(123)  # Returns {name: 'Old Name'}\nupdate_record(123, name='New Name')\nget_record(123)  # Still returns {name: 'Old Name'} (WRONG!)\n```\n\n## Root Cause\n`update_record()` modifies database but doesn't call `cache.invalidate()`.\n\n\nCan you help me fix this?",
+      "turn_type": "clarification",
+      "metadata": {
+        "phase": "issue_presentation"
+      }
+    },
+    {
+      "turn_number": 2,
+      "role": "assistant",
+      "content": "Could you provide more context about how this function is typically called? What are the expected inputs?",
+      "turn_type": "clarification",
+      "metadata": {
+        "phase": "clarification",
+        "exchange": 1
+      }
+    },
+    {
+      "turn_number": 3,
+      "role": "user",
+      "content": "This is called from multiple places in the codebase, usually with user input that hasn't been validated.",
+      "turn_type": "clarification",
+      "metadata": {
+        "phase": "clarification",
+        "exchange": 1
+      }
+    },
+    {
+      "turn_number": 4,
+      "role": "assistant",
+      "content": "Is this issue consistent or intermittent? Have you noticed any patterns?",
+      "turn_type": "clarification",
+      "metadata": {
+        "phase": "clarification",
+        "exchange": 2
+      }
+    },
+    {
+      "turn_number": 5,
+      "role": "user",
+      "content": "We're on the latest version. This is a new issue that appeared recently.",
+      "turn_type": "clarification",
+      "metadata": {
+        "phase": "clarification",
+        "exchange": 2
+      }
+    },
+    {
+      "turn_number": 6,
+      "role": "assistant",
+      "content": "My plan:\n1. Refactor the problematic function\n2. Extract reusable logic\n3. Add edge case handling\n\nShould I proceed with this approach?",
+      "turn_type": "planning",
+      "metadata": {
+        "phase": "planning"
+      }
+    },
+    {
+      "turn_number": 7,
+      "role": "assistant",
+      "content": "[TRACE] Entering function validate_input\n[TRACE] Input size: 1024 bytes\n[TRACE] Validation passed",
+      "turn_type": "noise",
+      "metadata": {
+        "noise_type": "logs",
+        "importance": 0.1
+      }
+    },
+    {
+      "turn_number": 8,
+      "role": "user",
+      "content": "Perfect. One more thing - can you ensure the fix doesn't impact performance?",
+      "turn_type": "planning",
+      "metadata": {
+        "phase": "planning",
+        "iteration": 1
+      }
+    },
+    {
+      "turn_number": 9,
+      "role": "assistant",
+      "content": "Absolutely, I'll add comprehensive logging at key points.",
+      "turn_type": "planning",
+      "metadata": {
+        "phase": "planning",
+        "iteration": 1
+      }
+    },
+    {
+      "turn_number": 10,
+      "role": "user",
+      "content": "Please show me the code for the main function.",
+      "turn_type": "coding",
+      "metadata": {
+        "phase": "coding",
+        "iteration": 1
+      }
+    },
+    {
+      "turn_number": 11,
+      "role": "assistant",
+      "content": "Build: #1234\nCommit: abc123def456\nBranch: feature/improvements",
+      "turn_type": "noise",
+      "metadata": {
+        "noise_type": "system_info",
+        "importance": 0.1
+      }
+    },
+    {
+      "turn_number": 12,
+      "role": "assistant",
+      "content": "Here's the implementation:\n\n```python\ndef fixed_function(input_data):\n    \"\"\"Fixed version with proper error handling\"\"\"\n    if not input_data:\n        return None  # Handle empty input\n\n    # Process data\n    result = process(input_data)\n    return result\n```\n\nThis handles the main logic with proper error checking.",
+      "turn_type": "coding",
+      "metadata": {
+        "phase": "coding",
+        "iteration": 1,
+        "code_length": 218
+      }
+    },
+    {
+      "turn_number": 13,
+      "role": "user",
+      "content": "Can you implement the validation logic now?",
+      "turn_type": "coding",
+      "metadata": {
+        "phase": "coding",
+        "iteration": 2
+      }
+    },
+    {
+      "turn_number": 14,
+      "role": "assistant",
+      "content": "Here's the implementation:\n\n```python\ndef fixed_function(input_data):\n    \"\"\"Fixed version with proper error handling\"\"\"\n    if not input_data:\n        return None  # Handle empty input\n\n    # Process data\n    result = process(input_data)\n    return result\n```\n\nThis handles the main logic with proper error checking.",
+      "turn_type": "coding",
+      "metadata": {
+        "phase": "coding",
+        "iteration": 2,
+        "code_length": 218
+      }
+    },
+    {
+      "turn_number": 15,
+      "role": "user",
+      "content": "The tests are failing with:\n\n```\nTypeError: unsupported operand type(s) for +: 'NoneType' and 'int'\n  File main.py, line 15\n```\n\nWhat's causing this?",
+      "turn_type": "debugging",
+      "metadata": {
+        "phase": "debugging",
+        "iteration": 1
+      }
+    },
+    {
+      "turn_number": 16,
+      "role": "assistant",
+      "content": "Environment: Development\nDatabase: PostgreSQL 13.4\nCache: Redis 6.2",
+      "turn_type": "noise",
+      "metadata": {
+        "noise_type": "system_info",
+        "importance": 0.1
+      }
+    },
+    {
+      "turn_number": 17,
+      "role": "assistant",
+      "content": "The issue is a type mismatch. Here's the fix:\n\n```python\n# Add null check\nif value is not None:\n    return value + 1\nreturn 0\n```",
+      "turn_type": "debugging",
+      "metadata": {
+        "phase": "debugging",
+        "iteration": 1
+      }
+    },
+    {
+      "turn_number": 18,
+      "role": "user",
+      "content": "I'm getting this error when running the tests:\n\n```\nTypeError: unsupported operand type(s) for +: 'NoneType' and 'int'\n  File main.py, line 15\n```",
+      "turn_type": "debugging",
+      "metadata": {
+        "phase": "debugging",
+        "iteration": 2
+      }
+    },
+    {
+      "turn_number": 19,
+      "role": "assistant",
+      "content": "The issue is a type mismatch. Here's the fix:\n\n```python\n# Add null check\nif value is not None:\n    return value + 1\nreturn 0\n```",
+      "turn_type": "debugging",
+      "metadata": {
+        "phase": "debugging",
+        "iteration": 2
+      }
+    },
+    {
+      "turn_number": 20,
+      "role": "user",
+      "content": "After implementing your changes, I see:\n\n```\nAssertionError: Expected 10, got 8\n  File test_module.py, line 42\n```",
+      "turn_type": "debugging",
+      "metadata": {
+        "phase": "debugging",
+        "iteration": 3
+      }
+    },
+    {
+      "turn_number": 21,
+      "role": "assistant",
+      "content": "We need to handle the None case:\n\n```python\n# Use correct method\nreturn data.get('key', default_value)\n```",
+      "turn_type": "debugging",
+      "metadata": {
+        "phase": "debugging",
+        "iteration": 3
+      }
+    },
+    {
+      "turn_number": 22,
+      "role": "user",
+      "content": "Test output:\n\n```\nTypeError: unsupported operand type(s) for +: 'NoneType' and 'int'\n  File main.py, line 15\n```\n\nHow should we fix this?",
+      "turn_type": "debugging",
+      "metadata": {
+        "phase": "debugging",
+        "iteration": 4
+      }
+    },
+    {
+      "turn_number": 23,
+      "role": "assistant",
+      "content": "Environment: Development\nDatabase: PostgreSQL 13.4\nCache: Redis 6.2",
+      "turn_type": "noise",
+      "metadata": {
+        "noise_type": "system_info",
+        "importance": 0.1
+      }
+    },
+    {
+      "turn_number": 24,
+      "role": "assistant",
+      "content": "We need to handle the None case:\n\n```python\n# Add boundary check\nif index < len(array):\n    return array[index]\nreturn None\n```",
+      "turn_type": "debugging",
+      "metadata": {
+        "phase": "debugging",
+        "iteration": 4
+      }
+    },
+    {
+      "turn_number": 25,
+      "role": "user",
+      "content": "Can you refactor this to be more readable?",
+      "turn_type": "refinement",
+      "metadata": {
+        "phase": "refinement",
+        "iteration": 1
+      }
+    },
+    {
+      "turn_number": 26,
+      "role": "assistant",
+      "content": "Refactored into smaller, more focused functions for better readability.",
+      "turn_type": "refinement",
+      "metadata": {
+        "phase": "refinement",
+        "iteration": 1
+      }
+    }
+  ]
+}
