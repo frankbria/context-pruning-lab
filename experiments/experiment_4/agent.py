@@ -43,7 +43,7 @@ class AgentConfig:
     model: str = "claude-sonnet-4-20250514"
     max_tokens: int = 4096
     temperature: float = 0.7
-    target_context_size: int = 40_000  # Target context size in tokens
+    target_context_size: int = 156_250  # Target context size in tokens (was 40K - now realistic for 200K window)
     api_key: Optional[str] = None
 
     def __post_init__(self):
