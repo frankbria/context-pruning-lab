@@ -51,21 +51,32 @@ class SWEBenchLoader:
     dataset when ready for production validation.
     """
 
-    def __init__(self, cache_dir: str = "data/swe_bench", use_simulated: bool = True):
+    def __init__(self, cache_dir: str = "data/swe_bench", use_simulated: bool = False):
         """
         Initialize loader
 
         Args:
             cache_dir: Directory to cache repos and problems
-            use_simulated: If True, use simulated problems for testing
+            use_simulated: If True, use simulated problems for testing (default: False - use real SWE-bench)
         """
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.use_simulated = use_simulated
 
-        # Real dataset would be loaded here:
-        # from datasets import load_dataset
-        # self.dataset = load_dataset("princeton-nlp/SWE-bench")
+        # Load real dataset
+        if not use_simulated:
+            try:
+                from datasets import load_dataset
+                print("Loading SWE-bench Lite dataset...")
+                self.dataset = load_dataset("princeton-nlp/SWE-bench_Lite", split="test")
+                print(f"✓ Loaded {len(self.dataset)} problems from SWE-bench Lite")
+            except Exception as e:
+                print(f"Warning: Could not load SWE-bench dataset: {e}")
+                print("Falling back to simulated mode")
+                self.use_simulated = True
+                self.dataset = None
+        else:
+            self.dataset = None
 
     def select_balanced_problems(self, n: int = 20) -> List[SWEBenchProblem]:
         """
@@ -180,13 +191,52 @@ def test_fix():
         """
         Select from real SWE-bench dataset
 
-        NOTE: Requires 'datasets' library installed:
-        pip install datasets gitpython
+        Selects balanced problems across repos and difficulties.
+        For initial validation, we'll select smaller, faster problems.
         """
-        raise NotImplementedError(
-            "Real SWE-bench integration requires datasets library. "
-            "Set use_simulated=True for infrastructure testing."
-        )
+        if not self.dataset:
+            raise RuntimeError("Dataset not loaded. Initialize with use_simulated=False")
+
+        problems = []
+
+        # For initial validation, select specific repos with manageable codebases
+        # Prioritize smaller repos for faster cloning
+        target_repos = [
+            "psf/requests",       # HTTP library - small, focused
+            "sympy/sympy",        # Symbolic math - medium size
+            "django/django",      # Web framework - large
+        ]
+
+        # Select problems from each repo
+        problems_per_repo = max(1, n // len(target_repos))
+
+        for repo in target_repos:
+            if len(problems) >= n:
+                break
+
+            # Find problems for this repo
+            repo_problems = [item for item in self.dataset if item['repo'] == repo]
+
+            # Take first problems_per_repo items
+            for item in repo_problems[:problems_per_repo]:
+                if len(problems) >= n:
+                    break
+
+                # Convert dataset item to SWEBenchProblem
+                problem = SWEBenchProblem(
+                    instance_id=item['instance_id'],
+                    repo=item['repo'],
+                    base_commit=item['base_commit'],
+                    problem_statement=item['problem_statement'],
+                    hints_text=item.get('hints_text', ''),
+                    test_patch=item.get('test_patch', ''),
+                    patch=item.get('patch', ''),
+                    difficulty='medium'  # SWE-bench doesn't provide difficulty, default to medium
+                )
+                problems.append(problem)
+
+        print(f"Selected {len(problems)} problems from SWE-bench Lite")
+        return problems[:n]
 
     def prepare_problem(self, problem: SWEBenchProblem) -> SWEBenchProblem:
         """

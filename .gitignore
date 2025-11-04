@@ -33,3 +33,4 @@ experiments/output/
 .DS_Store
 Thumbs.db
 results/experiment_4/*.json
+data/swe_bench/codebases/
