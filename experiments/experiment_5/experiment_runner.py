@@ -401,7 +401,7 @@ def main():
         print("Set with: export ANTHROPIC_API_KEY='your-key'")
         return
 
-    # Run with 3 problems for validation
+    # Run with 1 problem for quick validation first
     runner = SWEBenchExperimentRunner(
         output_dir="results/experiment_5",
         max_turns=20,  # Keep reasonable for validation
@@ -409,7 +409,7 @@ def main():
     )
 
     results = runner.run_experiment(
-        n_problems=3,
+        n_problems=1,  # Start with 1 for quick test
         strategies=["discrete_baseline"]  # Start with baseline to verify compaction
     )
 
