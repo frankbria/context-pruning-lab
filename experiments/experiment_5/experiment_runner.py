@@ -256,12 +256,12 @@ class SWEBenchExperimentRunner:
         max_context = max(max_context, stats['context_size'])
 
         # Simulate reading files (in real implementation, agent would request these)
-        # For validation, just read a few files to grow context
+        # For validation, read MANY files to trigger compaction (need 125K tokens)
         if problem.relevant_files:
-            files_to_read = problem.relevant_files[:5]  # Read first 5 files
+            files_to_read = problem.relevant_files[:40]  # Read up to 40 files to reach threshold
         else:
             # Find some Python files to read
-            files_to_read = tools.list_files(".", "*.py")[:5]
+            files_to_read = tools.list_files(".", "*.py")[:40]
 
         for file_path in files_to_read:
             if turns >= self.max_turns:
@@ -271,8 +271,9 @@ class SWEBenchExperimentRunner:
             content = tools.read_file(file_path)
 
             if not content.startswith("Error:"):
-                # Add file content to context
-                file_message = f"Read file {file_path}:\n```python\n{content[:2000]}\n```"
+                # Add FULL file content to context (no truncation)
+                # Need to accumulate 125K+ tokens to trigger compaction
+                file_message = f"Read file {file_path}:\n```python\n{content}\n```"
                 agent.receive_message(file_message)
                 response = agent.generate_response()
                 turns += 1
@@ -404,7 +405,7 @@ def main():
     # Run with 1 problem for quick validation first
     runner = SWEBenchExperimentRunner(
         output_dir="results/experiment_5",
-        max_turns=20,  # Keep reasonable for validation
+        max_turns=50,  # Increased to allow more context growth
         verbose=True
     )
 
