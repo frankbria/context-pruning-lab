@@ -202,11 +202,24 @@ class ContinuousPruner:
         self,
         target_size: int = 40000,  # Target context size in tokens
         pruning_overhead: float = 1.10,  # DEPRECATED: Use adaptive rate instead
-        core_budget: int = 10000  # Reserved for CORE tier (never pruned)
+        core_budget: int = 10000,  # Reserved for CORE tier (never pruned)
+        # NEW: Warmup and gradual ramp parameters
+        warmup_interactions: int = 5,  # No pruning for first N interactions
+        ramp_interactions: int = 10,  # Gradual rate increase over N interactions
+        recent_protection: int = 3,  # Always protect last N interactions
+        min_pruning_rate: float = 0.10,  # Minimum rate during warmup (10%)
+        target_pruning_rate: float = 0.60  # Maximum rate at steady state (60%)
     ):
         self.target_size = target_size
         self.pruning_overhead = pruning_overhead  # Kept for backward compatibility
         self.core_budget = core_budget
+
+        # NEW: Warmup and ramp parameters
+        self.warmup_interactions = warmup_interactions
+        self.ramp_interactions = ramp_interactions
+        self.recent_protection = recent_protection
+        self.min_pruning_rate = min_pruning_rate
+        self.target_pruning_rate = target_pruning_rate
 
         self.context: List[ContextItem] = []
         self.interaction_count = 0
@@ -301,6 +314,38 @@ class ContinuousPruner:
 
         return final_rate
 
+    def get_current_pruning_rate(self) -> float:
+        """
+        Calculate current pruning rate based on warmup/ramp phases.
+
+        Phase 1 (Warmup): interactions 1-warmup_interactions
+            - Use min_pruning_rate (default 10%)
+            - Allows agent to build working memory
+
+        Phase 2 (Ramp): interactions (warmup+1) to (warmup+ramp)
+            - Linear increase from min to target rate
+            - Smooth transition to steady state
+
+        Phase 3 (Steady State): interactions > (warmup+ramp)
+            - Use target_pruning_rate (default 60%)
+            - Maintain stable context size
+
+        Returns:
+            float: Current pruning rate (0.0-1.0)
+        """
+        if self.interaction_count <= self.warmup_interactions:
+            # Warmup phase: minimal pruning to build context
+            return self.min_pruning_rate
+
+        if self.interaction_count <= self.warmup_interactions + self.ramp_interactions:
+            # Ramp phase: linear increase
+            progress = (self.interaction_count - self.warmup_interactions) / self.ramp_interactions
+            rate_range = self.target_pruning_rate - self.min_pruning_rate
+            return self.min_pruning_rate + (progress * rate_range)
+
+        # Steady state: full pruning rate
+        return self.target_pruning_rate
+
     def add_interaction(
         self,
         user_message: str,
@@ -341,20 +386,41 @@ class ContinuousPruner:
         # Update all importance scores
         self._update_importance_scores()
 
-        # Calculate adaptive pruning rate based on current state
-        adaptive_rate = self.calculate_adaptive_rate()
-        self.pruning_rate_history.append(adaptive_rate)
+        # NEW: Use gradual pruning rate instead of adaptive
+        pruning_rate = self.get_current_pruning_rate()
+        self.pruning_rate_history.append(pruning_rate)
 
-        # Calculate how much to prune using adaptive rate
-        target_prune = int(tokens_added * adaptive_rate)
+        # Calculate how much to prune using gradual rate
+        target_prune = int(tokens_added * pruning_rate)
 
         # Prune lowest-scored items
+        tokens_before_prune = self.get_total_tokens()
         tokens_removed, items_removed = self._prune_context(target_prune)
+        tokens_after_prune = self.get_total_tokens()
+
+        # Enhanced DEBUG logging with phase information
+        if self.interaction_count % 5 == 0 or self.interaction_count <= self.warmup_interactions:
+            import logging
+
+            # Determine current phase
+            if self.interaction_count <= self.warmup_interactions:
+                phase = "WARMUP"
+            elif self.interaction_count <= self.warmup_interactions + self.ramp_interactions:
+                phase = "RAMP"
+            else:
+                phase = "STEADY"
+
+            logging.info(f"ContinuousPruner[{self.interaction_count}] {phase}: "
+                        f"tokens_before={tokens_before_prune}, "
+                        f"tokens_after={tokens_after_prune}, "
+                        f"removed={tokens_removed}, "
+                        f"items_in_context={len(self.context)}, "
+                        f"pruning_rate={pruning_rate:.3f}")
 
         # Update metrics
         self.metrics.tokens_removed = tokens_removed
         self.metrics.items_removed = items_removed
-        self.metrics.current_token_count = self.get_total_tokens()
+        self.metrics.current_token_count = tokens_after_prune
         self.metrics.total_interactions = self.interaction_count
 
         return self.metrics
@@ -409,12 +475,28 @@ class ContinuousPruner:
         """
         Prune lowest-importance items until target tokens removed.
 
+        NEW: Adds explicit recent protection - last N interactions are never pruned.
+
         Returns: (tokens_removed, items_removed)
         """
 
-        # Separate CORE tier (never prune) from prunable
-        core_items = [i for i in self.context if i.tier == "CORE" or i.importance >= 0.95]
-        prunable_items = [i for i in self.context if i.tier != "CORE" and i.importance < 0.95]
+        # NEW: Calculate recent protection threshold
+        recent_threshold = self.interaction_count - self.recent_protection
+
+        # Separate protected items (CORE + high importance + recent) from prunable
+        protected_items = [
+            i for i in self.context
+            if i.tier == "CORE"
+            or i.importance >= 0.95
+            or i.interaction_number > recent_threshold  # NEW: Recent protection
+        ]
+
+        prunable_items = [
+            i for i in self.context
+            if i.tier != "CORE"
+            and i.importance < 0.95
+            and i.interaction_number <= recent_threshold  # NEW: Must be old enough
+        ]
 
         # Sort prunable by importance (lowest first)
         prunable_items.sort(key=lambda x: x.importance)
@@ -435,8 +517,8 @@ class ContinuousPruner:
                 # Keep this item
                 items_to_keep.append(item)
 
-        # Rebuild context (CORE + kept items)
-        self.context = core_items + items_to_keep
+        # Rebuild context (protected + kept items)
+        self.context = protected_items + items_to_keep
 
         return tokens_removed, items_removed
 

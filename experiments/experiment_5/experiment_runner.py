@@ -241,6 +241,9 @@ class SWEBenchExperimentRunner:
         compaction_triggered = False
         first_compaction_tokens = None
 
+        # Conversation logging for validation
+        conversation_log = []
+
         # Simplified conversation loop for validation
         # Real implementation would be more sophisticated
         turns = 0
@@ -254,6 +257,17 @@ class SWEBenchExperimentRunner:
         # Track context after first turn
         stats = agent.get_context_stats()
         max_context = max(max_context, stats['context_size'])
+
+        # Log initial interaction
+        conversation_log.append({
+            'turn': turns,
+            'user_message': initial_message[:500] + '...' if len(initial_message) > 500 else initial_message,
+            'agent_response': response[:1000] + '...' if len(response) > 1000 else response,
+            'context_size': stats['context_size'],
+            'tokens_sent': stats.get('tokens_sent', 0),
+            'tokens_received': stats.get('tokens_received', 0),
+            'timestamp': datetime.now().isoformat()
+        })
 
         # Simulate reading files (in real implementation, agent would request these)
         # For validation, read MANY files to trigger compaction (need 125K tokens)
@@ -283,6 +297,19 @@ class SWEBenchExperimentRunner:
                 context_size = stats['context_size']
                 max_context = max(max_context, context_size)
 
+                # Log this interaction (every 5 turns to avoid huge logs)
+                if turns % 5 == 0 or turns <= 5:
+                    conversation_log.append({
+                        'turn': turns,
+                        'user_message': f"Read file {file_path} ({len(content)} chars)",
+                        'agent_response': response[:500] + '...' if len(response) > 500 else response,
+                        'context_size': context_size,
+                        'max_context': max_context,
+                        'tokens_sent': stats.get('tokens_sent', 0),
+                        'tokens_received': stats.get('tokens_received', 0),
+                        'timestamp': datetime.now().isoformat()
+                    })
+
                 # Check for compaction
                 if strategy == "discrete_baseline":
                     current_compactions = stats['pruning_operations']
@@ -290,7 +317,8 @@ class SWEBenchExperimentRunner:
                         # New compaction occurred!
                         if not compaction_triggered:
                             compaction_triggered = True
-                            first_compaction_tokens = context_size
+                            # BUG FIX: Capture tokens BEFORE compaction, not after
+                            first_compaction_tokens = max_context
 
                         compaction_history.append({
                             'turn': turns,
@@ -298,10 +326,40 @@ class SWEBenchExperimentRunner:
                             'tokens_after': context_size
                         })
 
+                        # Log compaction event
+                        conversation_log.append({
+                            'turn': turns,
+                            'event': 'COMPACTION',
+                            'tokens_before': max_context,
+                            'tokens_after': context_size,
+                            'reduction_pct': (1 - context_size/max_context) * 100 if max_context > 0 else 0,
+                            'timestamp': datetime.now().isoformat()
+                        })
+
         # Get final stats
         final_stats = agent.get_context_stats()
         tool_stats = tools.get_stats()
         execution_time = time.time() - start_time
+
+        # Save conversation log
+        log_dir = self.output_dir / "conversations"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_filename = log_dir / f"{problem.instance_id}_{strategy}_conversation.json"
+
+        with open(log_filename, 'w') as f:
+            json.dump({
+                'instance_id': problem.instance_id,
+                'repo': problem.repo,
+                'strategy': strategy,
+                'turns': turns,
+                'execution_time': execution_time,
+                'conversation': conversation_log,
+                'final_context_size': final_stats['context_size'],
+                'final_total_tokens': final_stats['total_tokens']
+            }, f, indent=2)
+
+        if self.verbose:
+            print(f"  ✓ Conversation log saved: {log_filename}")
 
         # Build result
         result = ExperimentResult(
@@ -409,8 +467,12 @@ def main():
         verbose=True
     )
 
+    # Configuration: Set via command line arg or default to 2
+    import sys
+    n_problems = int(sys.argv[1]) if len(sys.argv) > 1 else 2
+
     results = runner.run_experiment(
-        n_problems=2,  # Test with 2 problems to verify both strategies work
+        n_problems=n_problems,
         strategies=["discrete_baseline", "continuous_pruning"]  # Test both strategies
     )
 

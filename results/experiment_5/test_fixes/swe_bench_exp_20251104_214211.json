@@ -1,0 +1,35 @@
+{
+  "timestamp": "20251104_214211",
+  "metadata": {
+    "max_turns": 50,
+    "config": {
+      "target_context_size": 156250,
+      "compaction_threshold": 125000
+    }
+  },
+  "results": {
+    "continuous_pruning": [
+      {
+        "instance_id": "psf__requests-1963",
+        "repo": "psf/requests",
+        "strategy": "continuous_pruning",
+        "success": true,
+        "turns": 41,
+        "execution_time": 507.4757716655731,
+        "total_tokens": 267866,
+        "tokens_sent": 247118,
+        "tokens_received": 20748,
+        "context_size_final": 0,
+        "context_size_max": 0,
+        "compaction_events": 0,
+        "pruning_operations": 41,
+        "files_read": 40,
+        "unique_files_read": 40,
+        "compaction_triggered": false,
+        "tokens_at_first_compaction": null,
+        "compaction_history": [],
+        "error_message": null
+      }
+    ]
+  }
+}
