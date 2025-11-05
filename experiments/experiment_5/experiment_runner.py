@@ -410,8 +410,8 @@ def main():
     )
 
     results = runner.run_experiment(
-        n_problems=1,  # Start with 1 for quick test
-        strategies=["discrete_baseline"]  # Start with baseline to verify compaction
+        n_problems=2,  # Test with 2 problems to verify both strategies work
+        strategies=["discrete_baseline", "continuous_pruning"]  # Test both strategies
     )
 
     print("\n✓ Experiment complete!")
