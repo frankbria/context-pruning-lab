@@ -1,0 +1,106 @@
+{
+  "timestamp": "20251104_232056",
+  "metadata": {
+    "max_turns": 50,
+    "config": {
+      "target_context_size": 156250,
+      "compaction_threshold": 125000
+    }
+  },
+  "results": {
+    "discrete_baseline": [
+      {
+        "instance_id": "psf__requests-1963",
+        "repo": "psf/requests",
+        "strategy": "discrete_baseline",
+        "success": true,
+        "turns": 41,
+        "execution_time": 925.146674156189,
+        "total_tokens": 3400917,
+        "tokens_sent": 3349376,
+        "tokens_received": 51541,
+        "context_size_final": 87818,
+        "context_size_max": 116007,
+        "compaction_events": 1,
+        "pruning_operations": 1,
+        "files_read": 40,
+        "unique_files_read": 40,
+        "compaction_triggered": true,
+        "tokens_at_first_compaction": 116007,
+        "compaction_history": [
+          {
+            "turn": 33,
+            "tokens_before": 116007,
+            "tokens_after": 46301
+          }
+        ],
+        "error_message": null
+      },
+      {
+        "instance_id": "sympy__sympy-11400",
+        "repo": "sympy/sympy",
+        "strategy": "discrete_baseline",
+        "success": true,
+        "turns": 2,
+        "execution_time": 90.8838849067688,
+        "total_tokens": 15676,
+        "tokens_sent": 8773,
+        "tokens_received": 6903,
+        "context_size_final": 8558,
+        "context_size_max": 8558,
+        "compaction_events": 0,
+        "pruning_operations": 0,
+        "files_read": 1,
+        "unique_files_read": 1,
+        "compaction_triggered": false,
+        "tokens_at_first_compaction": null,
+        "compaction_history": [],
+        "error_message": null
+      }
+    ],
+    "continuous_pruning": [
+      {
+        "instance_id": "psf__requests-1963",
+        "repo": "psf/requests",
+        "strategy": "continuous_pruning",
+        "success": true,
+        "turns": 41,
+        "execution_time": 2459.4580376148224,
+        "total_tokens": 1854820,
+        "tokens_sent": 1710602,
+        "tokens_received": 144218,
+        "context_size_final": 25868,
+        "context_size_max": 36762,
+        "compaction_events": 0,
+        "pruning_operations": 41,
+        "files_read": 40,
+        "unique_files_read": 40,
+        "compaction_triggered": false,
+        "tokens_at_first_compaction": null,
+        "compaction_history": [],
+        "error_message": null
+      },
+      {
+        "instance_id": "sympy__sympy-11400",
+        "repo": "sympy/sympy",
+        "strategy": "continuous_pruning",
+        "success": true,
+        "turns": 2,
+        "execution_time": 92.08429718017578,
+        "total_tokens": 15520,
+        "tokens_sent": 8773,
+        "tokens_received": 6747,
+        "context_size_final": 8464,
+        "context_size_max": 8464,
+        "compaction_events": 0,
+        "pruning_operations": 2,
+        "files_read": 1,
+        "unique_files_read": 1,
+        "compaction_triggered": false,
+        "tokens_at_first_compaction": null,
+        "compaction_history": [],
+        "error_message": null
+      }
+    ]
+  }
+}
