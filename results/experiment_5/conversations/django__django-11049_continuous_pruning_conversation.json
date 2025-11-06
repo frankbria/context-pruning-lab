@@ -1,0 +1,130 @@
+{
+  "instance_id": "django__django-11049",
+  "repo": "django/django",
+  "strategy": "continuous_pruning",
+  "turns": 41,
+  "execution_time": 8.830303192138672,
+  "conversation": [
+    {
+      "turn": 1,
+      "user_message": "You are working on a bug fix for django/django.\n\nProblem: Correct expected format in invalid DurationField error message\nDescription\n\t\nIf you enter a duration \"14:00\" into a duration field, it translates to \"00:14:00\" which is 14 minutes.\nThe current error message for invalid DurationField says that this should be the format of durations: \"[DD] [HH:[MM:]]ss[.uuuuuu]\". But according to the actual behaviour, it should be: \"[DD] [[HH:]MM:]ss[.uuuuuu]\", because seconds are mandatory, minutes are opt...",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3HfBUiVKkJMisUycAz'}",
+      "context_size": 295,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:51.903916"
+    },
+    {
+      "turn": 2,
+      "user_message": "Read file django/__init__.py (799 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3HiKFAp7wJZ91nyhGj'}",
+      "context_size": 571,
+      "max_context": 571,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:52.565029"
+    },
+    {
+      "turn": 3,
+      "user_message": "Read file django/__main__.py (211 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3HjCaGB3Uy4zmA8tpq'}",
+      "context_size": 700,
+      "max_context": 700,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:52.783177"
+    },
+    {
+      "turn": 4,
+      "user_message": "Read file django/apps/__init__.py (90 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3Hk7dzioJv98uyW7on'}",
+      "context_size": 734,
+      "max_context": 734,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:52.926549"
+    },
+    {
+      "turn": 5,
+      "user_message": "Read file django/apps/config.py (8711 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3HkgcxRzNESdkycqf1'}",
+      "context_size": 2760,
+      "max_context": 2760,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:53.053350"
+    },
+    {
+      "turn": 10,
+      "user_message": "Read file django/conf/locale/__init__.py (12365 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3Hpxqi2KQ9RKeHn6q2'}",
+      "context_size": 10942,
+      "max_context": 10942,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:54.023909"
+    },
+    {
+      "turn": 15,
+      "user_message": "Read file django/conf/locale/bg/__init__.py (0 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3HvbBDsaJVorMNqfgE'}",
+      "context_size": 3976,
+      "max_context": 10956,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:55.359916"
+    },
+    {
+      "turn": 20,
+      "user_message": "Read file django/conf/locale/bs/formats.py (705 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3J1tRRsovwxB3fdjRu'}",
+      "context_size": 1073,
+      "max_context": 10956,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:56.796433"
+    },
+    {
+      "turn": 25,
+      "user_message": "Read file django/conf/locale/cy/__init__.py (0 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3J6gu1Zb6dNcKVQUTF'}",
+      "context_size": 1317,
+      "max_context": 10956,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:57.667314"
+    },
+    {
+      "turn": 30,
+      "user_message": "Read file django/conf/locale/de/formats.py (1035 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3JAyriAzyr99TtzApt'}",
+      "context_size": 1413,
+      "max_context": 10956,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:58.684024"
+    },
+    {
+      "turn": 35,
+      "user_message": "Read file django/conf/locale/en/__init__.py (0 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3JEsXGjDhW6PuLYwhc'}",
+      "context_size": 1447,
+      "max_context": 10956,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:14:59.450808"
+    },
+    {
+      "turn": 40,
+      "user_message": "Read file django/conf/locale/en_GB/formats.py (2052 chars)",
+      "agent_response": "Error generating response: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'You have reached your specified API usage limits. You will regain access on 2025-12-01 at 00:00 UTC.'}, 'request_id': 'req_011CUq3JJkvzLjoUeSiiSVG5'}",
+      "context_size": 1948,
+      "max_context": 10956,
+      "tokens_sent": 0,
+      "tokens_received": 0,
+      "timestamp": "2025-11-05T09:15:00.303292"
+    }
+  ],
+  "final_context_size": 1962,
+  "final_total_tokens": 0
+}
