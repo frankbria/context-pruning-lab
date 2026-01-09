@@ -1,5 +1,7 @@
 # Context Pruning Lab
 
+[![Follow on X](https://img.shields.io/twitter/follow/FrankBria18044?style=social)](https://x.com/FrankBria18044)
+
 **Experimental validation of continuous context pruning for LLM agents**
 
 ## The Problem
