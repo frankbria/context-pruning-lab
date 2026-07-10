@@ -1,7 +1,7 @@
 # Minimal dependencies for context pruning lab
 
 # Core dependencies
-pytest>=7.0.0
+pytest>=9.1.1
 pytest-cov>=4.0.0
 
 # Optional: For visualizations in experiments
